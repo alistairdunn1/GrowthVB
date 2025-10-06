@@ -21,30 +21,46 @@
 summarize_vb <- function(model, digits = 3) {
   if (inherits(model, "vb_nls")) {
     # Handle nls model summary
-    params <- model$parameters
-
-    if (is.null(params$sex)) {
-      # Single model
-      result <- data.frame(
-        Parameter = c("Linf", "k", "t0"),
-        Estimate = c(params$Linf, params$k, params$t0),
-        Lower_CI = c(params$lowerCI[1], params$lowerCI[2], params$lowerCI[3]),
-        Upper_CI = c(params$upperCI[1], params$upperCI[2], params$upperCI[3])
-      )
-    } else {
-      # Multiple models by sex
-      result <- data.frame()
-      for (s in unique(params$sex)) {
-        subset_params <- params[params$sex == s, ]
-        temp <- data.frame(
-          Sex = s,
-          Parameter = c("Linf", "k", "t0"),
-          Estimate = c(subset_params$Linf, subset_params$k, subset_params$t0),
-          Lower_CI = c(subset_params$lowerCI[1], subset_params$lowerCI[2], subset_params$lowerCI[3]),
-          Upper_CI = c(subset_params$upperCI[1], subset_params$upperCI[2], subset_params$upperCI[3])
-        )
-        result <- rbind(result, temp)
+    # We compute confidence intervals from the stored nls model(s) when possible
+    make_row <- function(nls_model, sex = NULL) {
+      cf <- try(stats::coef(nls_model), silent = TRUE)
+      # Default NA CIs
+      lower <- rep(NA_real_, 3)
+      upper <- rep(NA_real_, 3)
+      nm <- c("Linf", "k", "t0")
+      if (!inherits(cf, "try-error")) {
+        ci <- try(stats::confint(nls_model), silent = TRUE)
+        if (!inherits(ci, "try-error") && all(nm %in% rownames(ci))) {
+          lower <- ci[nm, 1]
+          upper <- ci[nm, 2]
+        }
+        est <- unname(cf[nm])
+      } else {
+        est <- rep(NA_real_, 3)
       }
+      out <- data.frame(
+        Parameter = nm,
+        Estimate = est,
+        Lower_CI = lower,
+        Upper_CI = upper,
+        stringsAsFactors = FALSE
+      )
+      if (!is.null(sex)) out$Sex <- sex
+      out
+    }
+
+    if (is.list(model$model) && !inherits(model$model, "nls")) {
+      # Multiple models by sex
+      res_list <- list()
+      for (s in names(model$model)) {
+        res_list[[s]] <- make_row(model$model[[s]], sex = s)
+      }
+      result <- do.call(rbind, res_list)
+      # Ensure column order
+      result <- result[, c("Sex", "Parameter", "Estimate", "Lower_CI", "Upper_CI")]
+    } else {
+      # Single model
+      result <- make_row(model$model)
     }
 
     result <- round(result, digits)

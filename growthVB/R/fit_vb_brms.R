@@ -7,7 +7,10 @@
 #' @param age A numeric vector of ages
 #' @param length A numeric vector of lengths
 #' @param sex An optional factor or character vector specifying the sex for each observation
-#' @param priors Optional list of priors for the model parameters
+#' @param priors Optional brms prior object/list for the model parameters. If provided, takes precedence.
+#' @param prior_overrides Optional named character vector/list to override defaults for
+#'   specific parameters (names must be among "Linf", "k", "t0", "tau"). Each value should
+#'   be a brms prior string like "normal(150, 100)". Defaults are used for any not overridden.
 #' @param chains Number of MCMC chains (default 4)
 #' @param iter Number of iterations for each chain (default 4000)
 #' @param ... Additional arguments passed to brms::brm()
@@ -28,7 +31,8 @@
 #' @importFrom stats predict
 #' @export
 fit_vb_brms <- function(age, length, sex = NULL,
-                        priors = NULL, chains = 4, iter = 4000, ...) {
+                        priors = NULL, prior_overrides = NULL,
+                        chains = 4, iter = 4000, ...) {
   # Check if brms is installed
   if (!requireNamespace("brms", quietly = TRUE)) {
     stop("Package 'brms' is required for this function. Please install it.",
@@ -49,14 +53,38 @@ fit_vb_brms <- function(age, length, sex = NULL,
     data <- data[!is.na(data$age) & !is.na(data$length), ]
   }
 
-  # Set default priors if not provided
+  # Build priors: explicit 'priors' takes precedence; otherwise use defaults with optional overrides
   if (is.null(priors)) {
-    priors <- c(
-      brms::prior(normal(150, 100), nlpar = "Linf", lb = 0),
-      brms::prior(normal(0.3, 100), nlpar = "k", lb = 0),
-      brms::prior(normal(0, 1), nlpar = "t0"),
-      brms::prior(normal(0, 100), nlpar = "tau", lb = 0)
-    )
+    make_default_priors <- function() {
+      list(
+        Linf = brms::prior_string("normal(150, 100)", nlpar = "Linf", lb = 0),
+        k    = brms::prior_string("normal(0.3, 100)", nlpar = "k", lb = 0),
+        t0   = brms::prior_string("normal(0, 1)", nlpar = "t0"),
+        tau  = brms::prior_string("normal(0, 100)", nlpar = "tau", lb = 0)
+      )
+    }
+
+    # Start from defaults
+    prior_list <- make_default_priors()
+
+    # Apply selective overrides if provided
+    if (!is.null(prior_overrides)) {
+      if (is.list(prior_overrides)) {
+        # convert to character vector preserving names
+        prior_overrides <- unlist(prior_overrides)
+      }
+      if (!is.null(names(prior_overrides))) {
+        allowed <- intersect(names(prior_overrides), c("Linf", "k", "t0", "tau"))
+        for (nm in allowed) {
+          # lower bounds for parameters that must be >= 0
+          lb <- if (nm %in% c("Linf", "k", "tau")) 0 else NULL
+          # Construct a prior for this parameter from the string
+          prior_list[[nm]] <- brms::prior_string(as.character(prior_overrides[[nm]]), nlpar = nm, lb = lb)
+        }
+      }
+    }
+    # Collapse to a vector/list that brms::brm accepts
+    priors <- do.call(c, unname(prior_list))
   }
 
   # Function to fit a Bayesian model
@@ -98,9 +126,9 @@ fit_vb_brms <- function(age, length, sex = NULL,
       new_data <- data.frame(age = age_seq)
       preds <- brms::predict(model, newdata = new_data, probs = c(0.025, 0.975))
 
-      preds_df <- data.frame(preds) %>%
-        dplyr::bind_cols(new_data) %>%
-        dplyr::mutate(Sex = s, Model = "von Bertalanffy")
+      preds_df <- cbind(as.data.frame(preds), new_data)
+      preds_df$Sex <- s
+      preds_df$Model <- "von Bertalanffy"
 
       preds_list[[s]] <- preds_df
     }
@@ -121,9 +149,8 @@ fit_vb_brms <- function(age, length, sex = NULL,
     new_data <- data.frame(age = age_seq)
     preds <- brms::predict(model, newdata = new_data, probs = c(0.025, 0.975))
 
-    preds_df <- data.frame(preds) %>%
-      dplyr::bind_cols(new_data) %>%
-      dplyr::mutate(Model = "von Bertalanffy")
+    preds_df <- cbind(as.data.frame(preds), new_data)
+    preds_df$Model <- "von Bertalanffy"
 
     # Store results
     results$models <- model

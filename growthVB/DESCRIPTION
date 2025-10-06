@@ -3,7 +3,7 @@ Title: Von Bertalanffy Growth Curve Estimation
 Version: 0.1.0
 Date: 2025-10-07
 Authors@R: 
-    person("Your", "Name", , "your.email@example.com", role = c("aut", "cre"))
+    person("Alistair", "Dunn", , "alistair.dunn@eoceanenvironmental.co.nz", role = c("aut", "cre"))
 Description: Estimates von Bertalanffy Growth curves from age and length data. 
     Provides both frequentist (nls) and Bayesian (brms) approaches to fitting, 
     visualization tools for diagnostics, and methods for summarizing parameter estimates.
@@ -13,16 +13,14 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
     ggplot2,
-    dplyr,
-    tidyr,
     viridis,
     stats,
-    graphics,
-    tidyverse
+    graphics
 Suggests:
     brms,
     loo,
     bayesplot,
+    GGally,
     rstan,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

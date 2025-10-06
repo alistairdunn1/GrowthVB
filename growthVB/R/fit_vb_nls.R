@@ -40,15 +40,9 @@ fit_vb_nls <- function(age, length, sex = NULL, length_bins = NULL,
     data <- data[!is.na(data$age) & !is.na(data$length), ]
   }
 
-  # Define helper functions for the model
-  # These are needed because the weights formula references the parameters
-  vb_formula <- function(age, Linf, k, t0) {
-    Linf * (1 - exp(-k * (age - t0)))
-  }
+  # Define model directly in nls formula (avoid local helpers)
 
-  vb_weights <- function(age, Linf, k, t0) {
-    1 / (vb_formula(age, Linf, k, t0)^2)
-  }
+  # weights helper removed (not used)
 
   # Function to fit a model to a subset of the data
   fit_model <- function(subset_data) {
@@ -59,13 +53,13 @@ fit_vb_nls <- function(age, length, sex = NULL, length_bins = NULL,
 
     # Try multiple approaches to fit the model
 
-    # First try: with weights based on mean length
+    # First try: with simple weights (set to 1 for stability)
     model <- try(
       stats::nls(
-        length ~ vb_formula(age, Linf, k, t0),
+        length ~ Linf * (1 - exp(-k * (age - t0))),
         data = subset_data,
         start = list(Linf = Linf_init, k = k_init, t0 = t0_init),
-        # Use fixed weights for simplicity in tests
+        # Use fixed weights for simplicity and stability
         weights = rep(1, nrow(subset_data)),
         control = list(maxiter = 500)
       ),
@@ -107,45 +101,8 @@ fit_vb_nls <- function(age, length, sex = NULL, length_bins = NULL,
         )
 
         if (inherits(model, "try-error")) {
-          # For testing purposes only: if all else fails, create a simple linear model
-          warning("All NLS models failed. Creating a simple linear model for testing purposes.")
-
-          if (nrow(subset_data) < 5) {
-            stop("Not enough data points to fit model")
-          }
-
-          # For testing only - create a dummy model
-          dummy_coefs <- c(
-            Linf = max(subset_data$length, na.rm = TRUE) * 1.2,
-            k = 0.2,
-            t0 = -0.5
-          )
-
-          model <- list(
-            coefficients = dummy_coefs,
-            df.residual = nrow(subset_data) - 3,
-            sigma = sd(subset_data$length, na.rm = TRUE) * 0.1,
-            is_dummy = TRUE
-          )
-          class(model) <- "dummy_nls"
-
-          # Add predict method for the dummy model
-          attr(model, "predict") <- function(object, newdata = NULL, ...) {
-            if (is.null(newdata)) {
-              ages <- subset_data$age
-            } else {
-              ages <- newdata$age
-            }
-
-            object$coefficients["Linf"] * (1 - exp(-object$coefficients["k"] *
-              (ages - object$coefficients["t0"])))
-          }
-
-          # Override other methods needed
-          attr(model, "fitted.values") <- attr(model, "predict")(model)
-          attr(model, "residuals") <- subset_data$length - attr(model, "fitted.values")
-
-          return(model)
+          # If all attempts fail, abort with a clear message
+          stop("All attempts to fit the nls model failed. Try different starting values or check data quality.")
         }
       }
     }
@@ -170,19 +127,26 @@ fit_vb_nls <- function(age, length, sex = NULL, length_bins = NULL,
       model <- fit_model(subset_data)
       models_list[[s]] <- model
 
-      # Extract parameters and confidence intervals
-      params <- as.data.frame(t(stats::coef(model)))
-      ci <- as.data.frame(stats::confint(model, level = ci_level))
-      names(ci) <- c("lowerCI", "upperCI")
-      params <- cbind(params, ci)
-      params$sex <- s
-      params_list[[s]] <- params
+      # Extract parameter estimates only (CIs handled in summarize_vb)
+      coefs <- stats::coef(model)
+      params_df <- data.frame(
+        Linf = unname(coefs["Linf"]),
+        k = unname(coefs["k"]),
+        t0 = unname(coefs["t0"]),
+        sex = s,
+        row.names = NULL
+      )
+      params_list[[s]] <- params_df
 
       # Add fitted values and residuals
-      subset_data$fitted <- stats::predict(model)
-      subset_data$residual <- subset_data$length - subset_data$fitted
-      subset_data$student <- subset_data$residual /
-        sqrt(subset_data$fitted^2 * stats::sigma(model)^2)
+      fitted_vals <- stats::predict(model)
+      residuals <- subset_data$length - fitted_vals
+      # Residual std. error (RSE) with df = n - p
+      p <- length(stats::coef(model))
+      rse <- sqrt(sum(residuals^2, na.rm = TRUE) / max(1, (nrow(subset_data) - p)))
+      subset_data$fitted <- fitted_vals
+      subset_data$residual <- residuals
+      subset_data$student <- residuals / rse
 
       data_list[[s]] <- subset_data
 
@@ -190,18 +154,15 @@ fit_vb_nls <- function(age, length, sex = NULL, length_bins = NULL,
       age_seq <- seq(0, max(subset_data$age, na.rm = TRUE), length.out = 100)
       new_data <- data.frame(age = age_seq)
 
-      # Predict from model
-      pred <- stats::predict(model, newdata = new_data, se.fit = TRUE)
-      conf_level <- 1 - (1 - ci_level) / 2
-      t_val <- stats::qt(conf_level, df = model$df.residual)
-
-      # Create fit data
+      # Predict from model (no standard errors available for nls by default)
+      pred_mean <- stats::predict(model, newdata = new_data)
+      # Provide NA CIs to keep plotting code simple
       fit_data <- data.frame(
         age = age_seq,
-        mean = pred$fit,
-        se = pred$se.fit,
-        lowerCI = pred$fit - t_val * pred$se.fit,
-        upperCI = pred$fit + t_val * pred$se.fit,
+        mean = pred_mean,
+        se = NA_real_,
+        lowerCI = NA_real_,
+        upperCI = NA_real_,
         sex = s
       )
 
@@ -217,11 +178,14 @@ fit_vb_nls <- function(age, length, sex = NULL, length_bins = NULL,
     # Fit a single model to all data
     model <- fit_model(data)
 
-    # Extract parameters and confidence intervals
-    params <- as.data.frame(t(stats::coef(model)))
-    ci <- as.data.frame(stats::confint(model, level = ci_level))
-    names(ci) <- c("lowerCI", "upperCI")
-    params <- cbind(params, ci)
+    # Extract parameter estimates (CIs handled in summarize_vb)
+    coefs <- stats::coef(model)
+    params <- data.frame(
+      Linf = unname(coefs["Linf"]),
+      k = unname(coefs["k"]),
+      t0 = unname(coefs["t0"]),
+      row.names = NULL
+    )
 
     # Add fitted values and residuals
     data$fitted <- stats::predict(model)
@@ -232,18 +196,15 @@ fit_vb_nls <- function(age, length, sex = NULL, length_bins = NULL,
     age_seq <- seq(0, max(data$age, na.rm = TRUE), length.out = 100)
     new_data <- data.frame(age = age_seq)
 
-    # Predict from model
-    pred <- stats::predict(model, newdata = new_data, se.fit = TRUE)
-    conf_level <- 1 - (1 - ci_level) / 2
-    t_val <- stats::qt(conf_level, df = model$df.residual)
-
-    # Create fit data
+    # Predict from model (no standard errors available for nls by default)
+    pred_mean <- stats::predict(model, newdata = new_data)
+    # Provide NA CIs to keep plotting code simple
     fit_data <- data.frame(
       age = age_seq,
-      mean = pred$fit,
-      se = pred$se.fit,
-      lowerCI = pred$fit - t_val * pred$se.fit,
-      upperCI = pred$fit + t_val * pred$se.fit
+      mean = pred_mean,
+      se = NA_real_,
+      lowerCI = NA_real_,
+      upperCI = NA_real_
     )
 
     # Store results

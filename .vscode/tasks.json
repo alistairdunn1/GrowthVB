@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "R CMD check growthVB (quick)",
+			"type": "shell",
+			"command": "Rscript -e \"setwd('growthVB'); if (!requireNamespace('roxygen2', quietly = TRUE)) install.packages('roxygen2', repos='https://cloud.r-project.org'); roxygen2::roxygenize(); if (!requireNamespace('devtools', quietly = TRUE)) install.packages('devtools', repos='https://cloud.r-project.org'); devtools::check(args = c('--no-manual'), document = FALSE)\"",
+			"args": [],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		}
+	]
+}

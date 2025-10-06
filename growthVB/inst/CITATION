@@ -1,0 +1,14 @@
+citHeader("To cite growthVB in publications, please use:")
+
+meta <- utils::packageDescription("growthVB")
+
+bibentry(
+  bibtype = "Manual",
+  title   = sprintf("%s: %s", meta$Package, meta$Title),
+  author  = person("Alistair", "Dunn"),
+  year    = if (!is.null(meta$Date)) substr(meta$Date, 1, 4) else format(Sys.Date(), "%Y"),
+  note    = paste("R package version", meta$Version),
+  url     = "https://github.com/alistairdunn1/growthVB"
+)
+
+citFooter("If you use the Bayesian functionality, please also cite 'brms' and 'rstan'.")

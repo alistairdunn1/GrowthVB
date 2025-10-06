@@ -19,47 +19,41 @@
 #' @export
 plot_vb_age_counts <- function(age, year = NULL, sex = NULL,
                                theme_fn = ggplot2::theme_minimal()) {
-  require(ggplot2)
+  # Convert age to numeric if it isn't already
+  age <- as.numeric(age)
   
   # Basic input validation
   if(is.null(age) || length(age) == 0) {
     stop("'age' must be provided and have length > 0")
   }
   
-  # Convert age to numeric if it isn't already
-  age <- as.numeric(age)
+  # Create a base data frame with the age data
+  df <- data.frame(age = age)
   
-  # Basic input validation for year and sex
-  if(!is.null(year) && length(year) != length(age)) {
-    stop("'year' must have the same length as 'age'")
-  }
-  
-  if(!is.null(sex) && length(sex) != length(age)) {
-    stop("'sex' must have the same length as 'age'")
-  }
-  
-  # Remove NA values from age
-  valid_indices <- !is.na(age)
-  age <- age[valid_indices]
-  
+  # Add year and sex if provided
   if(!is.null(year)) {
-    year <- as.factor(year[valid_indices])
+    if(length(year) != length(age)) {
+      stop("'year' must have the same length as 'age'")
+    }
+    df$year <- as.factor(year)
   }
   
   if(!is.null(sex)) {
-    sex <- as.factor(sex[valid_indices])
+    if(length(sex) != length(age)) {
+      stop("'sex' must have the same length as 'age'")
+    }
+    df$sex <- as.factor(sex)
   }
+  
+  # Remove NA values for age
+  df <- df[!is.na(df$age), ]
   
   # Basic plot (age only)
   if(is.null(year) && is.null(sex)) {
-    # Create table directly from age vector
-    age_table <- table(age)
-    
-    # Extract values and create data frame
-    counts <- data.frame(
-      age = as.numeric(names(age_table)),
-      count = as.numeric(age_table)
-    )
+    # Calculate counts
+    counts <- as.data.frame(table(df$age))
+    names(counts) <- c("age", "count")
+    counts$age <- as.numeric(as.character(counts$age))
     
     # Create plot
     p <- ggplot2::ggplot(counts, ggplot2::aes(x = age, y = count)) +
@@ -70,10 +64,10 @@ plot_vb_age_counts <- function(age, year = NULL, sex = NULL,
   # Plot by year
   else if(!is.null(year) && is.null(sex)) {
     # Calculate counts
-    year_table <- table(age, year)
-    counts <- as.data.frame(year_table)
+    counts <- as.data.frame(table(df$age, df$year))
     names(counts) <- c("age", "year", "count")
     counts$age <- as.numeric(as.character(counts$age))
+    
     # Create plot
     p <- ggplot2::ggplot(counts, ggplot2::aes(x = age, y = count, fill = year)) +
       ggplot2::geom_col(position = "dodge") +
@@ -83,8 +77,7 @@ plot_vb_age_counts <- function(age, year = NULL, sex = NULL,
   # Plot by sex
   else if(is.null(year) && !is.null(sex)) {
     # Calculate counts
-    sex_table <- table(age, sex)
-    counts <- as.data.frame(sex_table)
+    counts <- as.data.frame(table(df$age, df$sex))
     names(counts) <- c("age", "sex", "count")
     counts$age <- as.numeric(as.character(counts$age))
     
@@ -94,12 +87,10 @@ plot_vb_age_counts <- function(age, year = NULL, sex = NULL,
       ggplot2::labs(x = "Age", y = "Count", fill = "Sex") +
       theme_fn
   }
-  
-  # With both year and sex
-  else if(!is.null(year) && !is.null(sex)) {
+  # Plot by year and sex
+  else {
     # Calculate counts
-    year_sex_table <- table(age, year, sex)
-    counts <- as.data.frame(year_sex_table)
+    counts <- as.data.frame(table(df$age, df$year, df$sex))
     names(counts) <- c("age", "year", "sex", "count")
     counts$age <- as.numeric(as.character(counts$age))
     

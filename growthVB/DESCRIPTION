@@ -13,11 +13,9 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
     ggplot2,
-    viridis,
     stats,
-    graphics
+    brms
 Suggests:
-    brms,
     loo,
     bayesplot,
     GGally,

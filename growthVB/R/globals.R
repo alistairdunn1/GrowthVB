@@ -7,5 +7,5 @@ utils::globalVariables(c(
   # Confidence intervals and predictions
   "lowerCI", "upperCI", "Estimate", "Q2.5", "Q97.5", "Model",
   # Binned summaries
-  "age_bin", "length_bin", "count"
+  "age_bin", "length_bin", "count", "value"
 ))

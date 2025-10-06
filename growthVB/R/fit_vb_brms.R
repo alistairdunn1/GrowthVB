@@ -7,10 +7,10 @@
 #' @param age A numeric vector of ages
 #' @param length A numeric vector of lengths
 #' @param sex An optional factor or character vector specifying the sex for each observation
-#' @param priors Optional brms prior object/list for the model parameters. If provided, takes precedence.
-#' @param prior_overrides Optional named character vector/list to override defaults for
-#'   specific parameters (names must be among "Linf", "k", "t0", "tau"). Each value should
-#'   be a brms prior string like "normal(150, 100)". Defaults are used for any not overridden.
+#' @param priors Optional brms prior object/list for the model parameters. If provided, this replaces defaults entirely.
+#' @param prior_overrides Optional named character vector or list to selectively override default priors
+#'   for specific non-linear parameters. Names must be in c("Linf","k","t0","tau"). Values are prior
+#'   specification strings accepted by brms (e.g. "normal(120, 30)"). Ignored if `priors` is supplied.
 #' @param chains Number of MCMC chains (default 4)
 #' @param iter Number of iterations for each chain (default 4000)
 #' @param ... Additional arguments passed to brms::brm()
@@ -29,6 +29,7 @@
 #' }
 #'
 #' @importFrom stats predict
+#' @importFrom brms brm fixef
 #' @export
 fit_vb_brms <- function(age, length, sex = NULL,
                         priors = NULL, prior_overrides = NULL,
@@ -124,7 +125,7 @@ fit_vb_brms <- function(age, length, sex = NULL,
       # Generate predictions for plotting
       age_seq <- sort(unique(subset_data$age))
       new_data <- data.frame(age = age_seq)
-      preds <- brms::predict(model, newdata = new_data, probs = c(0.025, 0.975))
+  preds <- stats::predict(model, newdata = new_data, probs = c(0.025, 0.975))
 
       preds_df <- cbind(as.data.frame(preds), new_data)
       preds_df$Sex <- s
@@ -147,7 +148,7 @@ fit_vb_brms <- function(age, length, sex = NULL,
     # Generate predictions for plotting
     age_seq <- sort(unique(data$age))
     new_data <- data.frame(age = age_seq)
-    preds <- brms::predict(model, newdata = new_data, probs = c(0.025, 0.975))
+  preds <- stats::predict(model, newdata = new_data, probs = c(0.025, 0.975))
 
     preds_df <- cbind(as.data.frame(preds), new_data)
     preds_df$Model <- "von Bertalanffy"

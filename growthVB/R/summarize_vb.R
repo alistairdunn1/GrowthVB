@@ -63,7 +63,9 @@ summarize_vb <- function(model, digits = 3) {
       result <- make_row(model$model)
     }
 
-    result <- round(result, digits)
+  # Round only numeric columns
+  num_cols <- vapply(result, is.numeric, logical(1))
+  result[num_cols] <- lapply(result[num_cols], round, digits = digits)
   } else if (inherits(model, "vb_brms")) {
     # Handle brms model summary
     if (is.list(model$models) && !inherits(model$models, "brmsfit")) {
@@ -91,7 +93,8 @@ summarize_vb <- function(model, digits = 3) {
       )
     }
 
-    result <- round(result, digits)
+  num_cols <- vapply(result, is.numeric, logical(1))
+  result[num_cols] <- lapply(result[num_cols], round, digits = digits)
   } else {
     stop("Input must be a model object from fit_vb_nls() or fit_vb_brms()")
   }

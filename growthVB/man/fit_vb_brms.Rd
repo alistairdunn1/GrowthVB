@@ -9,6 +9,7 @@ fit_vb_brms(
   length,
   sex = NULL,
   priors = NULL,
+  prior_overrides = NULL,
   chains = 4,
   iter = 4000,
   ...
@@ -21,7 +22,11 @@ fit_vb_brms(
 
 \item{sex}{An optional factor or character vector specifying the sex for each observation}
 
-\item{priors}{Optional list of priors for the model parameters}
+\item{priors}{Optional brms prior object/list for the model parameters. If provided, this replaces defaults entirely.}
+
+\item{prior_overrides}{Optional named character vector or list to selectively override default priors
+for specific non-linear parameters. Names must be in c("Linf","k","t0","tau"). Values are prior
+specification strings accepted by brms (e.g. "normal(120, 30)"). Ignored if \code{priors} is supplied.}
 
 \item{chains}{Number of MCMC chains (default 4)}
 

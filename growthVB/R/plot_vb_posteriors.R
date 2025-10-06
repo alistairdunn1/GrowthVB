@@ -100,7 +100,7 @@ plot_vb_posteriors <- function(model, ndraws = 50, theme_fn = ggplot2::theme_min
     if (requireNamespace("brms", quietly = TRUE)) {
       ce <- try(brms::conditional_effects(brms_model, spaghetti = TRUE, ndraws = 10), silent = TRUE)
       if (!inherits(ce, "try-error")) {
-        ce_plot <- brms::plot(ce)[[1]] +
+        ce_plot <- plot(ce)[[1]] +
           ggplot2::labs(title = paste("Conditional Effects", title_suffix)) +
           theme_fn
       }

@@ -25,47 +25,47 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
                                     bin_width_age = 1, bin_width_length = 5,
                                     theme_fn = ggplot2::theme_minimal()) {
   # Create data frame
-  data <- data.frame(age = age, length = length)
+  df <- data.frame(age = age, length = length)
 
   # Add sex if provided
   if (!is.null(sex)) {
-    data$sex <- sex
+  df$sex <- sex
     # Filter out NA values
-    data <- data[!is.na(data$age) & !is.na(data$length) & !is.na(data$sex), ]
+    df <- df[!is.na(df$age) & !is.na(df$length) & !is.na(df$sex), ]
   } else {
     # Filter out NA values
-    data <- data[!is.na(data$age) & !is.na(data$length), ]
+    df <- df[!is.na(df$age) & !is.na(df$length), ]
   }
 
   # Define bins
-  age_breaks <- seq(floor(min(data$age)), ceiling(max(data$age)) + bin_width_age, by = bin_width_age)
-  length_breaks <- seq(floor(min(data$length)), ceiling(max(data$length)) + bin_width_length, by = bin_width_length)
+  age_breaks <- seq(floor(min(df$age)), ceiling(max(df$age)) + bin_width_age, by = bin_width_age)
+  length_breaks <- seq(floor(min(df$length)), ceiling(max(df$length)) + bin_width_length, by = bin_width_length)
 
   # Create binned data
-  data$age_bin <- cut(data$age, breaks = age_breaks, include.lowest = TRUE, right = FALSE)
-  data$length_bin <- cut(data$length, breaks = length_breaks, include.lowest = TRUE, right = FALSE)
+  df$age_bin <- cut(df$age, breaks = age_breaks, include.lowest = TRUE, right = FALSE)
+  df$length_bin <- cut(df$length, breaks = length_breaks, include.lowest = TRUE, right = FALSE)
 
   # Count observations in each bin
   if (!is.null(sex)) {
-    counts <- as.data.frame(table(data$age_bin, data$length_bin, data$sex))
+  counts <- as.data.frame(table(df$age_bin, df$length_bin, df$sex))
     names(counts) <- c("age_bin", "length_bin", "sex", "count")
 
     # Create plot
     p <- ggplot2::ggplot(counts, ggplot2::aes(x = age_bin, y = length_bin, fill = count)) +
       ggplot2::geom_tile() +
-      viridis::scale_fill_viridis_c(name = "Count") +
+      ggplot2::scale_fill_gradient(name = "Count", low = "white", high = "steelblue") +
       ggplot2::labs(x = "Age", y = "Length") +
       ggplot2::facet_wrap(~sex) +
       theme_fn +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
   } else {
-    counts <- as.data.frame(table(data$age_bin, data$length_bin))
+  counts <- as.data.frame(table(df$age_bin, df$length_bin))
     names(counts) <- c("age_bin", "length_bin", "count")
 
     # Create plot
     p <- ggplot2::ggplot(counts, ggplot2::aes(x = age_bin, y = length_bin, fill = count)) +
       ggplot2::geom_tile() +
-      viridis::scale_fill_viridis_c(name = "Count") +
+      ggplot2::scale_fill_gradient(name = "Count", low = "white", high = "steelblue") +
       ggplot2::labs(x = "Age", y = "Length") +
       theme_fn +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1))
@@ -74,82 +74,4 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
   return(p)
 }
 
-#' Plot Age Count Summary
-#'
-#' This function creates a plot summarizing the number of observations by age (and optionally by year).
-#'
-#' @param age A numeric vector of ages
-#' @param year An optional vector of years for each observation
-#' @param sex An optional factor or character vector specifying the sex for each observation
-#' @param theme_fn Optional ggplot2 theme function to apply (default theme_minimal)
-#'
-#' @return A ggplot2 object
-#'
-#' @examples
-#' \dontrun{
-#' # Simple example with simulated data
-#' age <- 1:15
-#' years <- sample(2020:2023, 15, replace = TRUE)
-#' plot_vb_age_counts(age = age, year = years)
-#' }
-#'
-#' @export
-plot_vb_age_counts <- function(age, year = NULL, sex = NULL,
-                               theme_fn = ggplot2::theme_minimal()) {
-  # Create data frame
-  data <- data.frame(age = age)
 
-  # Add year and/or sex if provided
-  if (!is.null(year)) {
-    data$year <- year
-  }
-
-  if (!is.null(sex)) {
-    data$sex <- sex
-  }
-
-  # Filter out NA values for age
-  data <- data[!is.na(data$age), ]
-
-  # Create plot based on available data
-  if (!is.null(year) && !is.null(sex)) {
-    # Group by year and sex
-    counts <- as.data.frame(table(data$age, data$year, data$sex))
-    names(counts) <- c("age", "year", "sex", "count")
-
-    p <- ggplot2::ggplot(counts, ggplot2::aes(x = age, y = count, fill = year)) +
-      ggplot2::geom_col(position = "dodge") +
-      ggplot2::facet_wrap(~sex) +
-      ggplot2::labs(x = "Age", y = "Count", fill = "Year") +
-      theme_fn
-  } else if (!is.null(year)) {
-    # Group by year only
-    counts <- as.data.frame(table(data$age, data$year))
-    names(counts) <- c("age", "year", "count")
-
-    p <- ggplot2::ggplot(counts, ggplot2::aes(x = age, y = count, fill = year)) +
-      ggplot2::geom_col(position = "dodge") +
-      ggplot2::labs(x = "Age", y = "Count", fill = "Year") +
-      theme_fn
-  } else if (!is.null(sex)) {
-    # Group by sex only
-    counts <- as.data.frame(table(data$age, data$sex))
-    names(counts) <- c("age", "sex", "count")
-
-    p <- ggplot2::ggplot(counts, ggplot2::aes(x = age, y = count, fill = sex)) +
-      ggplot2::geom_col(position = "dodge") +
-      ggplot2::labs(x = "Age", y = "Count", fill = "Sex") +
-      theme_fn
-  } else {
-    # Simple age counts
-    counts <- as.data.frame(table(data$age))
-    names(counts) <- c("age", "count")
-
-    p <- ggplot2::ggplot(counts, ggplot2::aes(x = age, y = count)) +
-      ggplot2::geom_col(fill = "steelblue") +
-      ggplot2::labs(x = "Age", y = "Count") +
-      theme_fn
-  }
-
-  return(p)
-}

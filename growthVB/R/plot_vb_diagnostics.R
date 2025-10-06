@@ -61,7 +61,7 @@ plot_vb_diagnostics <- function(model, theme_fn = ggplot2::theme_minimal()) {
       ggplot2::geom_smooth(se = FALSE, color = "blue", method = "loess") +
       ggplot2::labs(
         x = "Fitted values",
-        y = "√|Standardized residuals|",
+        y = "sqrt(|Standardized residuals|)",
         title = paste("Scale-Location Plot", title_suffix)
       ) +
       theme_fn

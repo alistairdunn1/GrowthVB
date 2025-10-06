@@ -27,3 +27,5 @@ Create a small functional R package that estrimates von Bertalanffy Growwtrh cur
 11. Add a methods markdown file that would be suiotable for inclusion in a report that uses this package. Use british english throughout
 12. Add a tempolate 'results' markdown file as a template for users to report the results.
 13. Add unit tests to validate the package is working
+
+14. Run test and report the results using the data in Example/age.rdata

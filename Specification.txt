@@ -1,0 +1,30 @@
+Create a small functional R package that estrimates von Bertalanffy Growwtrh curves from age anbd lenght data.
+1. Use the function s in InitialCode/(03) Fit vonB nls (TOA).r and InitialCode/(03) Fit vonB nls (TOA).r to
+1a. Fit a von bertanalnnfy function using nls
+1b. optionally fit a bayesian von bertalanffy function using brms
+2. Take a vector of ages and a equal length vectort of lenfgths to fit the curves
+3. Fit the curves where the CV is a function of mean length
+4. have functions sumarise the reswults zand report estimates, 95% intervals of the parametes
+5. have functions to plot the curves and the undsrlying data inclung;
+5a. summaries oif the number of observations by year
+5b. heat map or symbol plot of the age length obseervations 
+6. Plot standard regression diagnostics for the fits
+7. plot posteriorr predictive plolts for the bayesian estimates
+
+
+Also refernce key scientific papers in a fully documented readme markdown file, and include the following refernce:
+@techreport{WGFSA2025-34,
+  abstract    = {This report characterises the Antarctic toothfish (Dissostichus mawsoni) fishery in CCAMLR Subarea 48.6 through the 2024/25 season, summarising catch and effort data, biological sampling, tagging results, age composition, and progress toward stock assessment. Since its inception in 1997, the fishery has evolved into a structured research program with four designated research blocks (486_2–486_5). In 2024, total catches included 460 tonnes of D. mawsoni, with possible recruitment suggested by presence of small (<110 cm) and large (>180 cm) fish.},
+  address     = {Hobart},
+  author      = {Okuda, T. and Somhlaba, S. and Sarralde, R. and Mori, M. and Rojo, V. and Dunn, A.},
+  institution = {CCAMLR},
+  number      = {WG-FSA-2025/34},
+  title       = {Characterisation of the toothfish fishery in Subarea 48.6 through the 2024/25 season},
+  type        = {Working Group Paper},
+  url         = {file:///C:/Users/alist/OneDrive/Projects/2026/WG-FSA-2025/WG%20Papers/WG-FSA-2025-34.pdf},
+  year        = {2025}
+}
+
+8. Add a methods markdown file that would be suiotable for inclusion in a report that uses this package. 
+9. Add a tempolate 'results' markdown file as a template for users to report the results.
+10. Add unit tests to validate the package is working

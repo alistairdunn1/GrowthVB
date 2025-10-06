@@ -89,7 +89,34 @@
 [Insert table summarizing sample characteristics]
 ```
 
-*[Optional: Insert length-frequency histogram or age-frequency histogram]*
+#### 4.1.1 Age Distribution
+
+*[Insert age frequency plot using plot_vb_age_counts(age)]*
+
+```r
+# Basic age distribution plot
+plot_vb_age_counts(age = age_data)
+```
+
+#### 4.1.2 Age Distribution by Sex
+
+*[Insert age frequency by sex plot using plot_vb_age_counts(age, sex=sex_data)]*
+
+```r
+# Age distribution by sex
+plot_vb_age_counts(age = age_data, sex = sex_data)
+```
+
+#### 4.1.3 Age Distribution by Year
+
+*[Insert age frequency by year plot using plot_vb_age_counts(age, year=year_data)]*
+
+```r
+# Age distribution by year
+plot_vb_age_counts(age = age_data, year = year_data)
+```
+
+*[Additional visualizations as needed]*
 
 ### 4.2 Growth Parameter Estimates
 

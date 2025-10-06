@@ -1,7 +1,10 @@
 # This script helps with building and installing the growthVB package
 
 # First, set the working directory to the package root
-# setwd("path/to/growthVB")
+# If running from the GrowthVB project root, navigate to the growthVB subdirectory:
+# setwd("growthVB")
+# If running from elsewhere, set the full path:
+# setwd("C:/path/to/GrowthVB/growthVB")
 
 # Build the documentation with roxygen2
 if (requireNamespace("roxygen2", quietly = TRUE)) {

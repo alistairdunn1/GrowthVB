@@ -5,11 +5,14 @@
 ## Installation
 
 ```r
-# Install from a local directory
-install.packages("path/to/growthVB", repos = NULL, type = "source")
+# Install from a local directory (from the root directory containing growthVB folder)
+install.packages("growthVB", repos = NULL, type = "source")
 
-# Or install directly from GitHub (if hosted there)
-# devtools::install_github("username/growthVB")
+# Or if you're in a different directory, specify the full path
+# install.packages("path/to/GrowthVB/growthVB", repos = NULL, type = "source")
+
+# Or install directly from GitHub (recommended)
+# devtools::install_github("alistairdunn1/growthVB", subdir = "growthVB")
 ```
 
 ## Features
@@ -47,6 +50,7 @@ fit_vb_nls(
 ```
 
 **Features:**
+
 - **Sex-specific modeling**: When `sex` is provided, fits separate growth curves for each sex
 - **Length bin sampling**: Corrects for length-stratified sampling through `length_bins` and `bin_counts`
 - **CV modeling**: Models heteroscedasticity where variance increases with fish size
@@ -73,6 +77,7 @@ fit_vb_brms(
 ```
 
 **Features:**
+
 - **Full Bayesian inference**: Posterior distributions for all parameters
 - **Sex-specific modeling**: When `sex` is provided, fits separate growth parameters for each sex
 - **Length bin sampling**: Corrects for length-stratified sampling through weighting
@@ -81,10 +86,12 @@ fit_vb_brms(
 - **MCMC control**: Fine-grained control of sampling behavior
 
 ### Analysis
+
 - `summarize_vb()`: Summarize parameter estimates with confidence/credible intervals
 - `compare_vb()`: Statistical comparison of multiple growth models
 
 ### Visualization
+
 - `plot_vb()`: Plot growth curves with data points
 - `plot_vb_diagnostics()`: Produce standard regression diagnostics plots
 - `plot_vb_posteriors()`: Generate posterior predictive plots for Bayesian models
@@ -180,6 +187,7 @@ if (requireNamespace("brms", quietly = TRUE)) {
 ```
 
 For a complete example, see the example script in the package:
+
 ```r
 file.path(system.file(package = "growthVB"), "examples", "example_usage.R")
 ```

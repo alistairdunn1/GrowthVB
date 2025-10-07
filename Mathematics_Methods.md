@@ -24,46 +24,82 @@ Where:
 - $k$: Reflects how quickly the fish approaches its maximum size (higher values indicate faster growth)
 - $t_0$: Theoretical age at zero length (typically negative and has limited biological meaning)
 
-## 3. Frequentist Implementation (NLS Method)
+## 3. Frequentist Implementation (Maximum Likelihood Method)
 
 ### 3.1 Model Formulation
 
-In the frequentist approach, we estimate the VBGF parameters using non-linear least squares (NLS) regression. We assume that observed lengths follow the model:
+In the frequentist approach, we estimate the VBGF parameters using maximum likelihood estimation. We assume that observed lengths follow the model:
 
 $$L_i = L_\infty \cdot (1 - e^{-k(t_i-t_0)}) + \varepsilon_i$$
 
-Where $\varepsilon_i \sim \mathcal{N}(0, \sigma^2)$ represents random error.
+Where $\varepsilon_i \sim \mathcal{N}(0, \sigma_i^2)$ represents random error with heteroscedastic variance.
 
-### 3.2 Parameter Estimation
+### 3.2 Heteroscedasticity Modeling
 
-The NLS algorithm minimizes the sum of squared residuals:
+In fish growth data, variance often increases with fish size. We explicitly model this heteroscedasticity by specifying that the standard deviation is proportional to the expected length:
 
-$$SSR = \sum_{i=1}^{n} [L_i - L_\infty \cdot (1 - e^{-k(t_i-t_0)})]^2$$
-
-This is accomplished using iterative optimization methods (typically Gauss-Newton or Levenberg-Marquardt algorithms).
-
-### 3.3 Heteroscedasticity Considerations
-
-In fish growth data, variance often increases with fish size. We can model this heteroscedasticity by specifying that the standard deviation is proportional to the expected length:
-
-$$\sigma_i = \tau \cdot \hat{L}_i$$
+$$\sigma_i = \text{CV} \cdot \hat{L}_i$$
 
 Where:
 - $\sigma_i$ is the standard deviation for observation $i$
 - $\hat{L}_i$ is the predicted length for observation $i$
-- $\tau$ is the coefficient of variation (CV)
+- $\text{CV}$ is the coefficient of variation
 
-This leads to the weighted least squares objective function:
+This means the observation model becomes:
 
-$$WSSR = \sum_{i=1}^{n} \frac{[L_i - L_\infty \cdot (1 - e^{-k(t_i-t_0)})]^2}{(\tau \cdot \hat{L}_i)^2}$$
+$$L_i \sim \mathcal{N}(L_\infty \cdot (1 - e^{-k(t_i-t_0)}), (\text{CV} \cdot \hat{L}_i)^2)$$
+
+### 3.3 Maximum Likelihood Estimation
+
+We use maximum likelihood estimation to find the parameters ($L_\infty$, $k$, $t_0$, and $\text{CV}$) that best fit the data. The negative log-likelihood function is:
+
+$$-\ln(\mathcal{L}) = \sum_{i=1}^{n} \left[ \ln(\sigma_i) + \frac{1}{2} \ln(2\pi) + \frac{(L_i - \hat{L}_i)^2}{2\sigma_i^2} \right]$$
+
+Substituting $\sigma_i = \text{CV} \cdot \hat{L}_i$:
+
+$$-\ln(\mathcal{L}) = \sum_{i=1}^{n} \left[ \ln(\text{CV} \cdot \hat{L}_i) + \frac{1}{2} \ln(2\pi) + \frac{(L_i - \hat{L}_i)^2}{2(\text{CV} \cdot \hat{L}_i)^2} \right]$$
+
+We minimize this function using the `optim()` function in R, with the BFGS algorithm as the default optimization method.
+
+### 3.4 Parameter Uncertainty
+
+We estimate the variance-covariance matrix of the parameters using the inverse of the Hessian matrix from the optimization procedure:
+
+$$\text{Var-Cov} \approx H^{-1}$$
+
+The standard errors of the parameters are the square roots of the diagonal elements of this matrix:
+
+$$\text{SE}(\hat{\theta}_j) = \sqrt{(H^{-1})_{jj}}$$
+
+### 3.5 Confidence Intervals
+
+We compute 95% confidence intervals for the parameters using the asymptotic normality of maximum likelihood estimators:
+
+$$\hat{\theta}_j \pm 1.96 \times \text{SE}(\hat{\theta}_j)$$
+
+For derived quantities like predicted lengths at given ages, we use the delta method to propagate uncertainty.
+
+### 3.3 Parameter Estimation via Maximum Likelihood
+
+The likelihood function for this model is:
+
+$$L(L_\infty, k, t_0, \tau | \text{data}) = \prod_{i=1}^{n} \frac{1}{\tau \cdot \hat{L}_i \cdot \sqrt{2\pi}} \exp\left(-\frac{(L_i - \hat{L}_i)^2}{2 \cdot (\tau \cdot \hat{L}_i)^2}\right)$$
+
+Where $\hat{L}_i = L_\infty \cdot (1 - e^{-k(t_i-t_0)})$
+
+We maximize the log-likelihood:
+
+$$\ell(L_\infty, k, t_0, \tau | \text{data}) = -\sum_{i=1}^{n} \left[\log(\tau \cdot \hat{L}_i) + \frac{(L_i - \hat{L}_i)^2}{2 \cdot (\tau \cdot \hat{L}_i)^2} + \frac{1}{2}\log(2\pi)\right]$$
+
+This is accomplished using numerical optimization methods such as BFGS or Nelder-Mead.
 
 ### 3.4 Confidence Intervals
 
-For the NLS approach, confidence intervals are derived using:
+For the maximum likelihood approach, confidence intervals are derived using:
 
-1. **Profile likelihood methods**: Computing likelihood-based confidence regions
-2. **Asymptotic normality**: Using the estimated variance-covariance matrix of parameters
-3. **Bootstrapping**: Resampling the data to generate empirical distributions of parameters
+1. **Hessian-based estimates**: The inverse of the negative Hessian matrix at the MLE provides an estimate of the variance-covariance matrix of parameters
+2. **Delta method**: For derived quantities (like predicted lengths), we propagate uncertainty using the delta method
+3. **Profile likelihood methods**: For more accurate intervals, profile likelihood can be used (computing likelihood-based confidence regions)
 
 ## 4. Bayesian Implementation (BRMS Method)
 
@@ -163,7 +199,7 @@ Posterior predictive checks include:
 
 The `growthVB` package implements these methods with the following core functions:
 
-1. `fit_vb_nls()`: Frequentist NLS estimation with optional heteroscedasticity modeling
+1. `fit_vb_mle()`: Frequentist MLE estimation with optional heteroscedasticity modeling
 2. `fit_vb_brms()`: Bayesian estimation using the brms package with Stan backend
 3. `plot_vb_predictions()`: Visualizing model fit with confidence/credible intervals
 4. `plot_vb_posteriors()`: Diagnostic plots for Bayesian models including posterior distributions and correlations

@@ -3,7 +3,7 @@
 #' This function creates diagnostic plots for von Bertalanffy growth model fits,
 #' including residual plots, Q-Q plots, and other diagnostics.
 #'
-#' @param model A model object returned by fit_vb_nls()
+#' @param model A model object returned by fit_vb_mle()
 #' @param theme_fn Optional ggplot2 theme function to apply (default theme_minimal)
 #'
 #' @return A list of ggplot2 objects
@@ -13,15 +13,15 @@
 #' # Simple example with simulated data
 #' age <- 1:15
 #' length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
-#' fit <- fit_vb_nls(age = age, length = length)
+#' fit <- fit_vb_mle(age = age, length = length)
 #' diagnostics <- plot_vb_diagnostics(fit)
 #' diagnostics$residuals_vs_fitted
 #' }
 #'
 #' @export
 plot_vb_diagnostics <- function(model, theme_fn = ggplot2::theme_minimal()) {
-  if (!inherits(model, "vb_nls")) {
-    stop("This function only works with nls models from fit_vb_nls()")
+  if (!inherits(model, "vb_mle")) {
+    stop("This function only works with models from fit_vb_mle()")
   }
 
   # Initialize list for plots
@@ -87,7 +87,7 @@ plot_vb_diagnostics <- function(model, theme_fn = ggplot2::theme_minimal()) {
   }
 
   # Check if we have multiple models by sex
-  if (is.list(model$model) && !inherits(model$model, "nls")) {
+  if (is.list(model$model) && !inherits(model$model, "vb_optim")) {
     # Create diagnostic plots for each sex
     for (s in names(model$model)) {
       subset_data <- model$data[model$data$sex == s, ]

@@ -69,7 +69,7 @@
 - *[Any modified models or alternative models]*
 
 **Estimation methods:**
-- Non-linear least squares (NLS)
+- Maximum likelihood estimation (MLE) with heteroscedasticity
 - Bayesian estimation using BRMS
 - *[Other methods if applicable]*
 
@@ -122,7 +122,7 @@ plot_vb_age_counts(age = age_data, year = year_data)
 
 #### 4.2.1 Combined Sex Analysis
 
-**Non-linear least squares estimates:**
+**Maximum likelihood estimates:**
 
 | Parameter | Estimate | Standard Error | 95% CI Lower | 95% CI Upper |
 | --------- | -------- | -------------- | ------------ | ------------ |

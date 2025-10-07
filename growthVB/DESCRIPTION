@@ -1,12 +1,15 @@
 Package: growthVB
-Title: Von Bertalanffy Growth Curve Estimation
-Version: 0.1.0
+Title: Von Bertalanffy Growth Curve Estimation with Heteroscedastic Errors
+Version: 0.2.0
 Date: 2025-10-07
 Authors@R: 
     person("Alistair", "Dunn", , "alistair.dunn@eoceanenvironmental.co.nz", role = c("aut", "cre"))
 Description: Estimates von Bertalanffy Growth curves from age and length data. 
-    Provides both frequentist (nls) and Bayesian (brms) approaches to fitting, 
-    visualization tools for diagnostics, and methods for summarizing parameter estimates.
+    Provides both maximum likelihood estimation (MLE) with heteroscedastic errors 
+    and Bayesian (brms) approaches to fitting, visualization tools for diagnostics, 
+    and methods for summarizing parameter estimates. The MLE approach explicitly 
+    models the coefficient of variation as a function of length, which is more 
+    appropriate for biological growth data.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

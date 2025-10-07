@@ -7,7 +7,7 @@
 summarize_vb(model, digits = 3)
 }
 \arguments{
-\item{model}{A model object returned by fit_vb_nls() or fit_vb_brms()}
+\item{model}{A model object returned by fit_vb_mle() or fit_vb_brms()}
 
 \item{digits}{Number of decimal places to round to (default 3)}
 }
@@ -23,7 +23,7 @@ providing parameter estimates and their confidence/credible intervals.
 # Simple example with simulated data
 age <- 1:15
 length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
-fit <- fit_vb_nls(age = age, length = length)
+fit <- fit_vb_mle(age = age, length = length)
 summarize_vb(fit)
 }
 

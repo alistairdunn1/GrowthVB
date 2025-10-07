@@ -3,7 +3,7 @@
 #' This function summarizes the results of a von Bertalanffy growth model fit,
 #' providing parameter estimates and their confidence/credible intervals.
 #'
-#' @param model A model object returned by fit_vb_nls() or fit_vb_brms()
+#' @param model A model object returned by fit_vb_mle() or fit_vb_brms()
 #' @param digits Number of decimal places to round to (default 3)
 #'
 #' @return A data frame with parameter estimates and their intervals
@@ -13,23 +13,98 @@
 #' # Simple example with simulated data
 #' age <- 1:15
 #' length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
-#' fit <- fit_vb_nls(age = age, length = length)
+#' fit <- fit_vb_mle(age = age, length = length)
 #' summarize_vb(fit)
 #' }
 #'
 #' @export
 summarize_vb <- function(model, digits = 3) {
-  if (inherits(model, "vb_nls")) {
-    # Handle nls model summary
-    # We compute confidence intervals from the stored nls model(s) when possible
-    make_row <- function(nls_model, sex = NULL) {
-      cf <- try(stats::coef(nls_model), silent = TRUE)
+  if (inherits(model, "vb_mle")) {
+    # Handle MLE model summary
+    if ((!is.null(model$models) && is.list(model$models)) ||
+      (!is.null(model$model) && is.list(model$model) && !inherits(model$model, "vb_optim"))) {
+      # Sex-specific models
+      # Use models if available, otherwise use model
+      sex_models <- if (!is.null(model$models)) model$models else model$model
+      result <- data.frame(
+        Sex = character(),
+        Parameter = character(),
+        Estimate = numeric(),
+        Lower = numeric(),
+        Upper = numeric(),
+        stringsAsFactors = FALSE
+      )
+
+      for (s in names(sex_models)) {
+        # Extract parameters for this sex
+        for (p in c("Linf", "k", "t0", "cv")) {
+          # Get parameter name with sex prefix
+          param_name <- paste0(s, "_", p)
+          if (param_name %in% rownames(model$parameters)) {
+            est <- model$parameters[param_name, "estimate"]
+            se <- model$parameters[param_name, "std.error"]
+            lower <- est - 1.96 * se
+            upper <- est + 1.96 * se
+
+            result <- rbind(result, data.frame(
+              Sex = s,
+              Parameter = p,
+              Estimate = round(est, digits),
+              Lower = round(lower, digits),
+              Upper = round(upper, digits),
+              stringsAsFactors = FALSE
+            ))
+          }
+        }
+      }
+
+      return(result)
+    } else {
+      # Single model - new MLE implementation
+      if (is.data.frame(model$parameters)) {
+        # Handle data.frame parameters format
+        result <- data.frame(
+          Parameter = colnames(model$parameters),
+          Estimate = as.numeric(model$parameters[1, ]),
+          Lower = NA,
+          Upper = NA,
+          stringsAsFactors = FALSE
+        )
+
+        # Round numeric values
+        num_cols <- vapply(result, is.numeric, logical(1))
+        result[num_cols] <- lapply(result[num_cols], round, digits = digits)
+
+        return(result)
+      } else if (is.vector(model$model$parameters) && !is.null(names(model$model$parameters))) {
+        # Handle case where parameters are in model$model$parameters as a named vector
+        params <- model$model$parameters
+        result <- data.frame(
+          Parameter = names(params),
+          Estimate = as.numeric(params),
+          Lower = NA,
+          Upper = NA,
+          stringsAsFactors = FALSE
+        )
+
+        # Round numeric values
+        num_cols <- vapply(result, is.numeric, logical(1))
+        result[num_cols] <- lapply(result[num_cols], round, digits = digits)
+
+        return(result)
+      }
+    }
+  } else if (inherits(model, "vb_mle")) {
+    # MLE model handling
+    make_row <- function(model, sex = NULL) {
+      cf <- try(stats::coef(model), silent = TRUE)
       # Default NA CIs
       lower <- rep(NA_real_, 3)
       upper <- rep(NA_real_, 3)
       nm <- c("Linf", "k", "t0")
+
       if (!inherits(cf, "try-error")) {
-        ci <- try(stats::confint(nls_model), silent = TRUE)
+        ci <- try(stats::confint(model), silent = TRUE)
         if (!inherits(ci, "try-error") && all(nm %in% rownames(ci))) {
           lower <- ci[nm, 1]
           upper <- ci[nm, 2]
@@ -38,18 +113,20 @@ summarize_vb <- function(model, digits = 3) {
       } else {
         est <- rep(NA_real_, 3)
       }
+
       out <- data.frame(
         Parameter = nm,
         Estimate = est,
-        Lower_CI = lower,
-        Upper_CI = upper,
+        Lower = lower,
+        Upper = upper,
         stringsAsFactors = FALSE
       )
+
       if (!is.null(sex)) out$Sex <- sex
-      out
+      return(out)
     }
 
-    if (is.list(model$model) && !inherits(model$model, "nls")) {
+    if (is.list(model$model) && !inherits(model$model, "vb_optim")) {
       # Multiple models by sex
       res_list <- list()
       for (s in names(model$model)) {
@@ -57,15 +134,17 @@ summarize_vb <- function(model, digits = 3) {
       }
       result <- do.call(rbind, res_list)
       # Ensure column order
-      result <- result[, c("Sex", "Parameter", "Estimate", "Lower_CI", "Upper_CI")]
+      result <- result[, c("Sex", "Parameter", "Estimate", "Lower", "Upper")]
     } else {
       # Single model
       result <- make_row(model$model)
     }
 
-  # Round only numeric columns
-  num_cols <- vapply(result, is.numeric, logical(1))
-  result[num_cols] <- lapply(result[num_cols], round, digits = digits)
+    # Round only numeric columns
+    num_cols <- vapply(result, is.numeric, logical(1))
+    result[num_cols] <- lapply(result[num_cols], round, digits = digits)
+
+    return(result)
   } else if (inherits(model, "vb_brms")) {
     # Handle brms model summary
     if (is.list(model$models) && !inherits(model$models, "brmsfit")) {
@@ -77,8 +156,8 @@ summarize_vb <- function(model, digits = 3) {
           Sex = s,
           Parameter = c("Linf", "k", "t0", "tau"),
           Estimate = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Estimate"],
-          Lower_CI = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q2.5"],
-          Upper_CI = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q97.5"]
+          Lower = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q2.5"],
+          Upper = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q97.5"]
         )
         result <- rbind(result, temp)
       }
@@ -88,16 +167,16 @@ summarize_vb <- function(model, digits = 3) {
       result <- data.frame(
         Parameter = c("Linf", "k", "t0", "tau"),
         Estimate = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Estimate"],
-        Lower_CI = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q2.5"],
-        Upper_CI = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q97.5"]
+        Lower = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q2.5"],
+        Upper = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q97.5"]
       )
     }
 
-  num_cols <- vapply(result, is.numeric, logical(1))
-  result[num_cols] <- lapply(result[num_cols], round, digits = digits)
-  } else {
-    stop("Input must be a model object from fit_vb_nls() or fit_vb_brms()")
-  }
+    num_cols <- vapply(result, is.numeric, logical(1))
+    result[num_cols] <- lapply(result[num_cols], round, digits = digits)
 
-  return(result)
+    return(result)
+  } else {
+    stop("Input must be a model object from fit_vb_mle() or fit_vb_brms()")
+  }
 }

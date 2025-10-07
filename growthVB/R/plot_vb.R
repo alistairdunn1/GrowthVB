@@ -2,7 +2,7 @@
 #'
 #' This function creates a plot of the von Bertalanffy growth curve fitted to age and length data.
 #'
-#' @param model A model object returned by fit_vb_nls() or fit_vb_brms()
+#' @param model A model object returned by fit_vb_mle() or fit_vb_brms()
 #' @param point_alpha Transparency of data points (default 0.5)
 #' @param show_ci Whether to display confidence intervals (default TRUE)
 #' @param theme_fn Optional ggplot2 theme function to apply (default theme_minimal)
@@ -14,15 +14,15 @@
 #' # Simple example with simulated data
 #' age <- 1:15
 #' length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
-#' fit <- fit_vb_nls(age = age, length = length)
+#' fit <- fit_vb_mle(age = age, length = length)
 #' plot_vb(fit)
 #' }
 #'
 #' @export
 plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
                     theme_fn = ggplot2::theme_minimal()) {
-  if (inherits(model, "vb_nls")) {
-    # Plot for NLS model
+  if (inherits(model, "vb_mle")) {
+    # Plot for MLE model
     if ("sex" %in% names(model$data)) {
       # Model with sex
       p <- ggplot2::ggplot(model$data, ggplot2::aes(x = age, y = length, colour = sex)) +
@@ -30,16 +30,19 @@ plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
         ggplot2::geom_line(data = model$fits, ggplot2::aes(x = age, y = mean), linewidth = 1)
 
       if (show_ci) {
-        p <- p + ggplot2::geom_line(
-          data = model$fits,
-          ggplot2::aes(x = age, y = lowerCI),
-          linetype = "dashed"
-        ) +
-          ggplot2::geom_line(
-            data = model$fits,
-            ggplot2::aes(x = age, y = upperCI),
+        # Only add confidence intervals if they're not all NA
+        if (sum(!is.na(model$fits$lowerCI)) > 0 && sum(!is.na(model$fits$upperCI)) > 0) {
+          p <- p + ggplot2::geom_line(
+            data = model$fits[!is.na(model$fits$lowerCI), ],
+            ggplot2::aes(x = age, y = lowerCI),
             linetype = "dashed"
-          )
+          ) +
+            ggplot2::geom_line(
+              data = model$fits[!is.na(model$fits$upperCI), ],
+              ggplot2::aes(x = age, y = upperCI),
+              linetype = "dashed"
+            )
+        }
       }
 
       p <- p + ggplot2::facet_wrap(~sex) +
@@ -57,16 +60,19 @@ plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
         )
 
       if (show_ci) {
-        p <- p + ggplot2::geom_line(
-          data = model$fits,
-          ggplot2::aes(x = age, y = lowerCI),
-          colour = "blue", linetype = "dashed"
-        ) +
-          ggplot2::geom_line(
-            data = model$fits,
-            ggplot2::aes(x = age, y = upperCI),
+        # Only add confidence intervals if they're not all NA
+        if (sum(!is.na(model$fits$lowerCI)) > 0 && sum(!is.na(model$fits$upperCI)) > 0) {
+          p <- p + ggplot2::geom_line(
+            data = model$fits[!is.na(model$fits$lowerCI), ],
+            ggplot2::aes(x = age, y = lowerCI),
             colour = "blue", linetype = "dashed"
-          )
+          ) +
+            ggplot2::geom_line(
+              data = model$fits[!is.na(model$fits$upperCI), ],
+              ggplot2::aes(x = age, y = upperCI),
+              colour = "blue", linetype = "dashed"
+            )
+        }
       }
 
       p <- p + ggplot2::labs(x = "Age", y = "Length") +
@@ -133,7 +139,7 @@ plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
         theme_fn
     }
   } else {
-    stop("Input must be a model object from fit_vb_nls() or fit_vb_brms()")
+    stop("Input must be a model object from fit_vb_mle() or fit_vb_brms()")
   }
 
   return(p)

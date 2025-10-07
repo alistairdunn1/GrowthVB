@@ -7,7 +7,7 @@
 plot_vb_diagnostics(model, theme_fn = ggplot2::theme_minimal())
 }
 \arguments{
-\item{model}{A model object returned by fit_vb_nls()}
+\item{model}{A model object returned by fit_vb_mle()}
 
 \item{theme_fn}{Optional ggplot2 theme function to apply (default theme_minimal)}
 }
@@ -23,7 +23,7 @@ including residual plots, Q-Q plots, and other diagnostics.
 # Simple example with simulated data
 age <- 1:15
 length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
-fit <- fit_vb_nls(age = age, length = length)
+fit <- fit_vb_mle(age = age, length = length)
 diagnostics <- plot_vb_diagnostics(fit)
 diagnostics$residuals_vs_fitted
 }

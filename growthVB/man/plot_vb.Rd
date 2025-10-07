@@ -12,7 +12,7 @@ plot_vb(
 )
 }
 \arguments{
-\item{model}{A model object returned by fit_vb_nls() or fit_vb_brms()}
+\item{model}{A model object returned by fit_vb_mle() or fit_vb_brms()}
 
 \item{point_alpha}{Transparency of data points (default 0.5)}
 
@@ -31,7 +31,7 @@ This function creates a plot of the von Bertalanffy growth curve fitted to age a
 # Simple example with simulated data
 age <- 1:15
 length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
-fit <- fit_vb_nls(age = age, length = length)
+fit <- fit_vb_mle(age = age, length = length)
 plot_vb(fit)
 }
 

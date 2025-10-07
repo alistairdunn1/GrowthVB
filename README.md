@@ -1,28 +1,32 @@
 # growthVB: Von Bertalanffy Growth Curve Estimation for R
 
-`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides both frequentist (nls) and Bayesian (brms) approaches to fitting, visualization tools for diagnostics, and methods for summarizing parameter estimates.
+`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides both maximum likelihood estimation (MLE) and Bayesian (brms) approaches to fitting, visualization tools for diagnostics, and methods for summarizing parameter estimates.
 
 ## Installation
 
 ```r
-# Install from a local directory (from the root directory containing growthVB folder)
-install.packages("growthVB", repos = NULL, type = "source")
+# Install directly from GitHub (recommended)
+devtools::install_github("alistairdunn1/growthVB", subdir = "growthVB")
+
+# Or install from a local directory (from the root directory containing growthVB folder)
+# install.packages("growthVB", repos = NULL, type = "source")
 
 # Or if you're in a different directory, specify the full path
 # install.packages("path/to/GrowthVB/growthVB", repos = NULL, type = "source")
 
-# Or install directly from GitHub (recommended)
-# devtools::install_github("alistairdunn1/growthVB", subdir = "growthVB")
+# To build the package from source, run:
+# Rscript build_package.R
 ```
 
 ## Features
 
-- Fit von Bertalanffy growth curves using non-linear least squares (NLS)
+- Fit von Bertalanffy growth curves using maximum likelihood estimation (MLE)
 - Optionally fit Bayesian von Bertalanffy curves using brms
-- Model CV as a function of mean length
-- Sex-specific growth modeling with optional interaction terms
+- Explicitly model heteroscedasticity with CV as a function of predicted length
+- Sex-specific growth modeling with separate parameters by sex
 - Length bin sampling corrections
 - Parameter estimation with 95% confidence/credible intervals
+- Predictions with confidence and prediction intervals
 - Visualize growth curves and underlying data
 - Produce diagnostic plots
 - Generate age-length heatmaps and age frequency summaries
@@ -32,29 +36,29 @@ install.packages("growthVB", repos = NULL, type = "source")
 
 ### Model Fitting
 
-#### `fit_vb_nls()`: Frequentist Von Bertalanffy Model Fitting
+#### `fit_vb_mle()`: Frequentist Von Bertalanffy Model Fitting
 
 ```r
-fit_vb_nls(
+fit_vb_mle(
   age,                 # Numeric vector of ages
   length,              # Numeric vector of lengths
   sex = NULL,          # Optional factor for sex-specific models (e.g., "M", "F")
   length_bins = NULL,  # Optional numeric vector of length bin midpoints
-  bin_counts = NULL,   # Optional count of samples in each length bin
-  start = NULL,        # Optional starting values for parameters (list: Linf, k, t0)
-  cv_model = TRUE,     # Whether to model CV as function of mean length
-  control = NULL,      # Control parameters for nls fitting (list)
-  verbose = TRUE,      # Whether to print progress and warnings
-  ...                  # Additional arguments passed to nls
+  sampling_prob = 1,   # Optional vector of sampling probabilities (defaults to 1)
+  ci_level = 0.95,     # Confidence interval level (default 0.95)
+  optim_method = "BFGS", # Optimization method for stats::optim (default "BFGS")
+  maxit = 1000         # Maximum number of iterations for optimization
 )
 ```
 
 **Features:**
 
+- **Maximum likelihood estimation**: Uses direct optimization for flexible parameter estimation
 - **Sex-specific modeling**: When `sex` is provided, fits separate growth curves for each sex
-- **Length bin sampling**: Corrects for length-stratified sampling through `length_bins` and `bin_counts`
-- **CV modeling**: Models heteroscedasticity where variance increases with fish size
-- **Robust fitting**: Includes intelligent starting value estimation and convergence handling
+- **CV modeling**: Explicitly models coefficient of variation as a function of mean length
+- **Heteroscedastic variance**: Accounts for increasing variance with fish length
+- **Parameter uncertainty**: Provides standard errors and confidence intervals for all parameters
+- **Robust fitting**: Includes intelligent starting value estimation and multiple optimization methods
 
 #### `fit_vb_brms()`: Bayesian Von Bertalanffy Model Fitting
 
@@ -105,35 +109,106 @@ fit_vb_brms(
 ```r
 library(growthVB)
 
-# Simple example with simulated data
-age <- 1:15
-length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+# Simple example with simulated data (heteroscedastic errors)
+set.seed(123)
+n <- 100
+true_Linf <- 120
+true_k <- 0.25
+true_t0 <- -0.5
+true_cv <- 0.1
 
-# Fit model
-fit <- fit_vb_nls(age = age, length = length)
+# Generate ages
+age <- 1:15
+age <- rep(age, each = 6)  # Multiple observations per age
+age <- age + rnorm(length(age), 0, 0.1)  # Add some noise
+
+# Generate lengths with heteroscedastic error (SD = CV * predicted length)
+mean_length <- true_Linf * (1 - exp(-true_k * (age - true_t0)))
+sd_length <- true_cv * mean_length
+length <- rnorm(length(age), mean = mean_length, sd = sd_length)
+
+# Fit model with MLE and heteroscedastic errors
+fit <- fit_vb_mle(age = age, length = length)
+
+# Print model results
+print(fit)
 
 # Summarize parameters
 summarize_vb(fit)
 
 # Plot growth curve
 plot_vb(fit)
+
+# Generate predictions with confidence intervals
+new_ages <- data.frame(age = seq(1, 15, by = 1))
+predictions <- predict(fit, newdata = new_ages, interval = "confidence")
+print(predictions)
 ```
 
 ### Sex-specific Growth Models
 
 ```r
-# Create data with sex differences
-age <- rep(1:15, 2)
-sex <- rep(c("F", "M"), each = 15)
-length_f <- 120 * (1 - exp(-0.15 * (1:15 - (-0.5)))) + rnorm(15, 0, 5)
-length_m <- 90 * (1 - exp(-0.25 * (1:15 - (-0.5)))) + rnorm(15, 0, 5)
-length <- c(length_f, length_m)
+# Create data with sex differences and heteroscedastic errors
+set.seed(456)
+n_per_sex <- 50
+ages <- seq(1, 15, length.out = n_per_sex)
+
+# Create sex variable
+sex <- rep(c("F", "M"), each = n_per_sex)
+
+# Different parameters by sex
+# Females: larger maximum size (Linf), slower growth rate (k)
+Linf_f <- 120
+k_f <- 0.15
+t0_f <- -0.5
+
+# Males: smaller maximum size, faster growth rate
+Linf_m <- 90
+k_m <- 0.25
+t0_m <- -0.3
+
+# Common CV parameter
+cv <- 0.08
+
+# Calculate mean lengths
+mean_length_f <- Linf_f * (1 - exp(-k_f * (ages - t0_f)))
+mean_length_m <- Linf_m * (1 - exp(-k_m * (ages - t0_m)))
+mean_length <- c(mean_length_f, mean_length_m)
+
+# Calculate standard deviations (heteroscedastic)
+sd_length <- cv * mean_length
+
+# Generate observed lengths
+age <- rep(ages, 2)
+length <- rnorm(length(age), mean = mean_length, sd = sd_length)
 
 # Fit sex-specific model
-fit_sex <- fit_vb_nls(age = age, length = length, sex = sex)
+fit_sex <- fit_vb_mle(age = age, length = length, sex = sex)
+
+# Print results
+print(fit_sex)
+
+# Summarize parameters
+summarize_vb(fit_sex)
 
 # Plot sex-specific growth curves
 plot_vb(fit_sex)
+
+# Compare parameters between sexes
+cat("\nGrowth parameter comparison by sex:\n")
+params <- fit_sex$parameters
+params_f <- params[grep("F", rownames(params)), ]
+params_m <- params[grep("M", rownames(params)), ]
+print(rbind(Females = params_f[1:3, "estimate"], 
+            Males = params_m[1:3, "estimate"]))
+
+# Make predictions for specific ages by sex
+new_data <- data.frame(
+  age = rep(c(1, 5, 10, 15), 2),
+  sex = rep(c("F", "M"), each = 4)
+)
+predictions <- predict(fit_sex, newdata = new_data, interval = "confidence")
+print(predictions)
 ```
 
 ### Length Bin Sampling Correction
@@ -149,7 +224,7 @@ length_bins <- seq(10, 110, by = 10)
 bin_counts <- table(cut(length, breaks = seq(5, 115, by = 10), labels = length_bins))
 
 # Fit with length bin correction
-fit_binned <- fit_vb_nls(
+fit_binned <- fit_vb_mle(
   age = age, 
   length = length,
   length_bins = as.numeric(names(bin_counts)),
@@ -157,7 +232,7 @@ fit_binned <- fit_vb_nls(
 )
 
 # Compare with uncorrected model
-fit_uncorrected <- fit_vb_nls(age = age, length = length)
+fit_uncorrected <- fit_vb_mle(age = age, length = length)
 compare_vb(list(Corrected = fit_binned, Uncorrected = fit_uncorrected))
 ```
 

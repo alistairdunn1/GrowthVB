@@ -193,7 +193,7 @@ plot_empirical_cv(age = age_data, length = length_data, sex = sex_data)
 
 ```r
 # Standard diagnostic plots
-diagnostics <- plot_vb_diagnostics(fitted_model)
+diagnostics <- plot_vb_mle_diagnostics(fitted_model)
 
 # View individual diagnostic plots
 diagnostics$residuals_vs_fitted  # Residuals vs fitted values

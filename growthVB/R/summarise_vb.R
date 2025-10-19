@@ -1,6 +1,6 @@
-#' Summarize von Bertalanffy Growth Model Results
+#' Summarise von Bertalanffy Growth Model Results
 #'
-#' This function summarizes the results of a von Bertalanffy growth model fit,
+#' This function summarises the results of a von Bertalanffy growth model fit,
 #' providing parameter estimates and their confidence/credible intervals.
 #'
 #' @param model A model object returned by fit_vb_mle() or fit_vb_brms()
@@ -14,11 +14,11 @@
 #' age <- 1:15
 #' length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
 #' fit <- fit_vb_mle(age = age, length = length)
-#' summarize_vb(fit)
+#' summarise_vb(fit)
 #' }
 #'
 #' @export
-summarize_vb <- function(model, digits = 3) {
+summarise_vb <- function(model, digits = 3) {
   if (inherits(model, "vb_mle")) {
     # Handle MLE model summary
     if ((!is.null(model$models) && is.list(model$models)) ||

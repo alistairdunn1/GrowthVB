@@ -55,7 +55,10 @@ plot_vb_growth_pp_checks <- function(model,
     original_data <- brms_model$data
 
     # Generate posterior predictions
-    y_rep <- brms::posterior_predict(brms_model, ndraws = ndraws)
+    y_rep <- try(posterior_predict(brms_model, ndraws = ndraws), silent = TRUE)
+    if (inherits(y_rep, "try-error")) {
+      stop("Could not generate posterior predictions from model")
+    }
 
     # 1. GROWTH PATTERNS
     if ("growth_patterns" %in% check_types) {
@@ -174,61 +177,72 @@ plot_vb_growth_pp_checks <- function(model,
     # 4. RESIDUAL PATTERNS
     if ("residual_patterns" %in% check_types) {
       # Prediction intervals vs observed
-      fitted_summary <- brms::fitted(brms_model, probs = c(0.025, 0.975))
-
-      # Calculate coverage
-      coverage <- mean(y_obs >= fitted_summary[, "Q2.5"] & y_obs <= fitted_summary[, "Q97.5"])
-
-      coverage_data <- data.frame(
-        fitted = fitted_summary[, "Estimate"],
-        observed = y_obs,
-        lower = fitted_summary[, "Q2.5"],
-        upper = fitted_summary[, "Q97.5"],
-        in_interval = y_obs >= fitted_summary[, "Q2.5"] & y_obs <= fitted_summary[, "Q97.5"]
-      )
-
-      coverage_plot <- ggplot2::ggplot(coverage_data, ggplot2::aes(x = fitted, y = observed)) +
-        ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper),
-          alpha = 0.3, colour = "lightblue"
-        ) +
-        ggplot2::geom_point(ggplot2::aes(colour = in_interval), alpha = 0.6) +
-        ggplot2::geom_abline(slope = 1, intercept = 0, colour = "red", linetype = "dashed") +
-        ggplot2::scale_colour_manual(
-          values = c("FALSE" = "red", "TRUE" = "royalblue"),
-          name = "In 95% PI"
-        ) +
-        ggplot2::labs(
-          title = paste("Prediction Interval Coverage", title_suffix),
-          subtitle = paste("Coverage:", round(coverage * 100, 1), "%"),
-          x = "Fitted Values", y = "Observed Values"
-        )
-
-      # Residual autocorrelation (if ordered by age)
-      if ("age" %in% names(original_data)) {
-        residuals <- y_obs - fitted_summary[, "Estimate"]
-        age_order <- order(original_data$age)
-
-        residual_acf_data <- data.frame(
-          lag1_residual = residuals[age_order[-length(age_order)]],
-          residual = residuals[age_order[-1]]
-        )
-
-        acf_plot <- ggplot2::ggplot(residual_acf_data, ggplot2::aes(x = lag1_residual, y = residual)) +
-          ggplot2::geom_point(alpha = 0.6, colour = "royalblue") +
-          ggplot2::geom_smooth(se = TRUE, colour = "black", method = "lm") +
-          ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = "red") +
-          ggplot2::geom_vline(xintercept = 0, linetype = "dashed", colour = "red") +
-          ggplot2::labs(
-            title = paste("Residual Autocorrelation (Age-ordered)", title_suffix),
-            x = "Residual at Age t", y = "Residual at Age t+1"
-          )
-
+      fitted_summary <- try(fitted(brms_model, probs = c(0.025, 0.975)), silent = TRUE)
+      if (inherits(fitted_summary, "try-error")) {
+        # Skip this check if fitted method fails
         checks$residual_patterns <- list(
-          coverage = coverage_plot,
-          autocorrelation = acf_plot
+          error_message = ggplot2::ggplot() +
+            ggplot2::geom_text(ggplot2::aes(
+              x = 0.5, y = 0.5,
+              label = "Residual pattern checks not available"
+            )) +
+            ggplot2::theme_void()
         )
       } else {
-        checks$residual_patterns <- list(coverage = coverage_plot)
+        # Calculate coverage
+        coverage <- mean(y_obs >= fitted_summary[, "Q2.5"] & y_obs <= fitted_summary[, "Q97.5"])
+
+        coverage_data <- data.frame(
+          fitted = fitted_summary[, "Estimate"],
+          observed = y_obs,
+          lower = fitted_summary[, "Q2.5"],
+          upper = fitted_summary[, "Q97.5"],
+          in_interval = y_obs >= fitted_summary[, "Q2.5"] & y_obs <= fitted_summary[, "Q97.5"]
+        )
+
+        coverage_plot <- ggplot2::ggplot(coverage_data, ggplot2::aes(x = fitted, y = observed)) +
+          ggplot2::geom_errorbar(ggplot2::aes(ymin = lower, ymax = upper),
+            alpha = 0.3, colour = "lightblue"
+          ) +
+          ggplot2::geom_point(ggplot2::aes(colour = in_interval), alpha = 0.6) +
+          ggplot2::geom_abline(slope = 1, intercept = 0, colour = "red", linetype = "dashed") +
+          ggplot2::scale_colour_manual(
+            values = c("FALSE" = "red", "TRUE" = "royalblue"),
+            name = "In 95% PI"
+          ) +
+          ggplot2::labs(
+            title = paste("Prediction Interval Coverage", title_suffix),
+            subtitle = paste("Coverage:", round(coverage * 100, 1), "%"),
+            x = "Fitted Values", y = "Observed Values"
+          )
+
+        # Residual autocorrelation (if ordered by age)
+        if ("age" %in% names(original_data)) {
+          residuals <- y_obs - fitted_summary[, "Estimate"]
+          age_order <- order(original_data$age)
+
+          residual_acf_data <- data.frame(
+            lag1_residual = residuals[age_order[-length(age_order)]],
+            residual = residuals[age_order[-1]]
+          )
+
+          acf_plot <- ggplot2::ggplot(residual_acf_data, ggplot2::aes(x = lag1_residual, y = residual)) +
+            ggplot2::geom_point(alpha = 0.6, colour = "royalblue") +
+            ggplot2::geom_smooth(se = TRUE, colour = "black", method = "lm") +
+            ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = "red") +
+            ggplot2::geom_vline(xintercept = 0, linetype = "dashed", colour = "red") +
+            ggplot2::labs(
+              title = paste("Residual Autocorrelation (Age-ordered)", title_suffix),
+              x = "Residual at Age t", y = "Residual at Age t+1"
+            )
+
+          checks$residual_patterns <- list(
+            coverage = coverage_plot,
+            autocorrelation = acf_plot
+          )
+        } else {
+          checks$residual_patterns <- list(coverage = coverage_plot)
+        }
       }
     }
 

@@ -1,6 +1,6 @@
-#' Plot von Bertalanffy Growth Model Diagnostics
+#' Plot von Bertalanffy MLE Model Diagnostics
 #'
-#' This function creates diagnostic plots for von Bertalanffy growth model fits,
+#' This function creates diagnostic plots for von Bertalanffy growth model fits using MLE,
 #' including residual plots, Q-Q plots, and other diagnostics.
 #'
 #' @param model A model object returned by fit_vb_mle()

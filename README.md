@@ -91,12 +91,12 @@ fit_vb_brms(
 
 ### Analysis
 
-- `summarize_vb()`: Summarise parameter estimates with confidence/credible intervals
+- `summarise_vb()`: Summarise parameter estimates with confidence/credible intervals
 
 ### Visualisation
 
 - `plot_vb()`: Plot growth curves with data points
-- `plot_vb_diagnostics()`: Produce standard regression diagnostics plots
+- `plot_vb_mle_diagnostics()`: Produce standard regression diagnostics plots for MLE models
 - `plot_vb_posteriors()`: Generate posterior predictive plots for Bayesian models
 - `plot_vb_bayes_diagnostics()`: Comprehensive MCMC convergence and Bayesian model diagnostics
 - `plot_vb_growth_pp_checks()`: Growth-specific posterior predictive checks for Bayesian models
@@ -135,13 +135,13 @@ fit <- fit_vb_mle(age = age, length = length)
 print(fit)
 
 # Summarise parameters
-summarize_vb(fit)
+summarise_vb(fit)
 
 # Plot growth curve
 plot_vb(fit)
 
 # Generate diagnostic plots
-diagnostics <- plot_vb_diagnostics(fit)
+diagnostics <- plot_vb_mle_diagnostics(fit)
 
 # Create age-length heatmap with smoother
 heatmap_plot <- plot_age_length_heatmap(age = age, length = length, add_smoother = TRUE)
@@ -201,8 +201,8 @@ fit_sex <- fit_vb_mle(age = age, length = length, sex = sex)
 # Print results
 print(fit_sex)
 
-# Summarize parameters
-summarize_vb(fit_sex)
+# Summarise parameters
+summarise_vb(fit_sex)
 
 # Plot sex-specific growth curves
 plot_vb(fit_sex)

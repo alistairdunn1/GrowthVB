@@ -1,6 +1,6 @@
 #' Plot Age-Length Heatmap
 #'
-#' This function creates a heatmap of the age-length observations to visualize
+#' This function creates a heatmap of the age-length observations to visualise
 #' the distribution of samples.
 #'
 #' @param age A numeric vector of ages
@@ -73,8 +73,8 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
     if (add_smoother) {
       p <- p + ggplot2::geom_smooth(
         data = df,
-        ggplot2::aes(x = age, y = length),
-        method = "loess", se = TRUE, color = "red", linewidth = 1, alpha = 0.7,
+        ggplot2::aes(x = age, y = length, fill = NULL),
+        method = "loess", se = TRUE, colour = "red", linewidth = 1, alpha = 0.7,
         inherit.aes = FALSE
       )
     }
@@ -97,7 +97,7 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
       p <- p + ggplot2::geom_smooth(
         data = df,
         ggplot2::aes(x = age, y = length),
-        method = "loess", se = TRUE, color = "red", linewidth = 1, alpha = 0.7,
+        method = "loess", se = TRUE, colour = "red", linewidth = 1, alpha = 0.7,
         inherit.aes = FALSE
       )
     }
@@ -213,7 +213,7 @@ plot_empirical_cv <- function(age, length, sex = NULL, min_n = 3, add_smoother =
     # Add smoother if requested
     if (add_smoother) {
       p <- p + ggplot2::geom_smooth(
-        method = "loess", se = TRUE, color = "red", linewidth = 1, alpha = 0.7
+        method = "loess", se = TRUE, colour = "red", linewidth = 1.2, alpha = 0.7
       )
     }
   } else {
@@ -234,7 +234,7 @@ plot_empirical_cv <- function(age, length, sex = NULL, min_n = 3, add_smoother =
     # Add smoother if requested
     if (add_smoother) {
       p <- p + ggplot2::geom_smooth(
-        method = "loess", se = TRUE, color = "red", linewidth = 1, alpha = 0.7
+        method = "loess", se = TRUE, colour = "red", linewidth = 1, alpha = 0.7
       )
     }
   }

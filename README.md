@@ -1,6 +1,6 @@
 # growthVB: Von Bertalanffy Growth Curve Estimation for R
 
-`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides both maximum likelihood estimation (MLE) and Bayesian (brms) approaches to fitting, visualization tools for diagnostics, and methods for summarizing parameter estimates.
+`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides both maximum likelihood estimation (MLE) and Bayesian (brms) approaches to fitting, visualisation tools for diagnostics, and methods for summarising parameter estimates.
 
 ## Installation
 
@@ -23,11 +23,11 @@ devtools::install_github("alistairdunn1/growthVB", subdir = "growthVB")
 - Fit von Bertalanffy growth curves using maximum likelihood estimation (MLE)
 - Optionally fit Bayesian von Bertalanffy curves using brms
 - Explicitly model heteroscedasticity with CV as a function of predicted length
-- Sex-specific growth modeling with separate parameters by sex
+- Sex-specific growth modelling with separate parameters by sex
 - Length bin sampling corrections
 - Parameter estimation with 95% confidence/credible intervals
 - Predictions with confidence and prediction intervals
-- Visualize growth curves and underlying data
+- Visualise growth curves and underlying data
 - Produce diagnostic plots including empirical CV analysis
 - Generate age-length heatmaps with optional smoothers and age frequency summaries
 - Posterior predictive checks for Bayesian models
@@ -46,19 +46,19 @@ fit_vb_mle(
   length_bins = NULL,  # Optional numeric vector of length bin midpoints
   sampling_prob = 1,   # Optional vector of sampling probabilities (defaults to 1)
   ci_level = 0.95,     # Confidence interval level (default 0.95)
-  optim_method = "L-BFGS-B", # Optimization method for stats::optim (default "L-BFGS-B")
-  maxit = 1000         # Maximum number of iterations for optimization
+  optim_method = "L-BFGS-B", # Optimisation method for stats::optim (default "L-BFGS-B")
+  maxit = 1000         # Maximum number of iterations for optimisation
 )
 ```
 
 **Features:**
 
-- **Maximum likelihood estimation**: Uses direct optimization for flexible parameter estimation
-- **Sex-specific modeling**: When `sex` is provided, fits separate growth curves for each sex
-- **CV modeling**: Explicitly models coefficient of variation as a function of mean length
+- **Maximum likelihood estimation**: Uses direct optimisation for flexible parameter estimation
+- **Sex-specific modelling**: When `sex` is provided, fits separate growth curves for each sex
+- **CV modelling**: Explicitly models coefficient of variation as a function of mean length
 - **Heteroscedastic variance**: Accounts for increasing variance with fish length
 - **Parameter uncertainty**: Provides standard errors and confidence intervals for all parameters
-- **Robust fitting**: Uses bounded optimization (L-BFGS-B) with intelligent starting values for reliable parameter estimation and confidence intervals
+- **Robust fitting**: Uses bounded optimisation (L-BFGS-B) with intelligent starting values for reliable parameter estimation and confidence intervals
 
 #### `fit_vb_brms()`: Bayesian Von Bertalanffy Model Fitting
 
@@ -83,22 +83,25 @@ fit_vb_brms(
 **Features:**
 
 - **Full Bayesian inference**: Posterior distributions for all parameters
-- **Sex-specific modeling**: When `sex` is provided, fits separate growth parameters for each sex
+- **Sex-specific modelling**: When `sex` is provided, fits separate growth parameters for each sex
 - **Length bin sampling**: Corrects for length-stratified sampling through weighting
-- **CV modeling**: Models heteroscedasticity where variance increases with fish size
+- **CV modelling**: Models heteroscedasticity where variance increases with fish size
 - **Prior specification**: Flexible prior definition for all parameters
-- **MCMC control**: Fine-grained control of sampling behavior
+- **MCMC control**: Fine-grained control of sampling behaviour
 
 ### Analysis
 
-- `summarize_vb()`: Summarize parameter estimates with confidence/credible intervals
+- `summarize_vb()`: Summarise parameter estimates with confidence/credible intervals
 
-### Visualization
+### Visualisation
 
 - `plot_vb()`: Plot growth curves with data points
 - `plot_vb_diagnostics()`: Produce standard regression diagnostics plots
 - `plot_vb_posteriors()`: Generate posterior predictive plots for Bayesian models
-- `plot_age_length_heatmap()`: Create heatmap visualizations of age-length observations with optional smoothers
+- `plot_vb_bayes_diagnostics()`: Comprehensive MCMC convergence and Bayesian model diagnostics
+- `plot_vb_growth_pp_checks()`: Growth-specific posterior predictive checks for Bayesian models
+- `plot_vb_predictions()`: Plot von Bertalanffy growth curves from prediction data with confidence/prediction intervals
+- `plot_age_length_heatmap()`: Create heatmap visualisations of age-length observations with optional smoothers
 - `plot_vb_age_counts()`: Plot frequency distribution of age samples by group variables
 - `plot_empirical_cv()`: Plot empirical coefficient of variation by age for data exploration
 
@@ -131,7 +134,7 @@ fit <- fit_vb_mle(age = age, length = length)
 # Print model results
 print(fit)
 
-# Summarize parameters
+# Summarise parameters
 summarize_vb(fit)
 
 # Plot growth curve
@@ -150,6 +153,9 @@ cv_plot <- plot_empirical_cv(age = age, length = length)
 new_ages <- data.frame(age = seq(1, 15, by = 1))
 predictions <- predict(fit, newdata = new_ages, interval = "confidence")
 print(predictions)
+
+# Plot predictions with original data
+plot_vb_predictions(predictions, original_data = fit$data)
 ```
 
 ### Sex-specific Growth Models
@@ -214,6 +220,54 @@ new_data <- data.frame(
 )
 predictions <- predict(fit_sex, newdata = new_data, interval = "confidence")
 print(predictions)
+
+# Create detailed predictions over age range for plotting
+new_ages <- data.frame(
+  age = rep(seq(0, 20, by = 0.5), each = 2), 
+  sex = rep(c("F", "M"), times = 41)
+)
+predictions_detailed <- predict(fit_sex, newdata = new_ages, interval = "prediction")
+
+# Plot growth curves with prediction intervals and original data
+plot_vb_predictions(predictions_detailed, original_data = fit_sex$data)
+```
+
+### Advanced Prediction Plotting
+
+The `plot_vb_predictions()` function provides comprehensive visualisation of von Bertalanffy growth predictions:
+
+```r
+# Fit a model
+fit <- fit_vb_mle(age = age, length = length, sex = sex)
+
+# Generate predictions over desired age range
+new_ages <- data.frame(
+  age = rep(seq(0, 25, by = 1), each = 2), 
+  sex = rep(c("M", "F"), times = 26)
+)
+predictions <- predict(fit, newdata = new_ages, interval = "prediction")
+
+# Create comprehensive plot with all features
+plot_vb_predictions(
+  predictions = predictions,
+  original_data = fit$data,        # Show original data points
+  show_points = TRUE,              # Display data points
+  show_intervals = TRUE,           # Show prediction intervals
+  facet_by_sex = TRUE,            # Separate panels for each sex
+  alpha_ribbon = 0.3,             # Transparency for intervals
+  alpha_points = 0.5,             # Transparency for points
+  point_size = 0.9,               # Size of data points
+  line_size = 1,                  # Thickness of fitted curves
+  title = "Von Bertalanffy Growth Curves with Prediction Intervals"
+)
+
+# Single model without sex
+fit_single <- fit_vb_mle(age = age, length = length)
+new_ages_single <- data.frame(age = seq(0, 25, by = 1))
+predictions_single <- predict(fit_single, newdata = new_ages_single, interval = "confidence")
+
+# Plot without faceting
+plot_vb_predictions(predictions_single, original_data = fit_single$data, facet_by_sex = FALSE)
 ```
 
 ### Length Bin Sampling Correction
@@ -260,14 +314,30 @@ if (requireNamespace("brms", quietly = TRUE)) {
     priors = list(
       Linf = c(100, 20),  # prior mean and SD for Linf
       k = c(0.2, 0.1),    # prior mean and SD for k
-      t0 = c(0, 1)        # prior mean and SD for t0
+      t0 = c(0, 1),       # prior mean and SD for t0
+      CV = c(0.1, 0.05)   # prior mean and SD for CV
     ),
     chains = 2,           # using fewer chains for example speed
     iter = 1000
   )
   
-  # Plot posterior predictions
+  # Basic posterior plots
   plot_vb_posteriors(fit_bayes)
+  
+  # Comprehensive Bayesian diagnostics
+  full_diagnostics <- plot_vb_bayes_diagnostics(fit_bayes)
+  
+  # Access specific diagnostic categories
+  full_diagnostics$convergence$trace    # MCMC trace plots
+  full_diagnostics$convergence$rhat     # R-hat convergence diagnostic
+  full_diagnostics$pp_checks$density    # Posterior predictive density check
+  full_diagnostics$residuals$residual_scatter  # Residual diagnostics
+  
+  # Growth-specific posterior predictive checks
+  growth_checks <- plot_vb_growth_pp_checks(fit_bayes)
+  growth_checks$growth_patterns         # Growth trajectory validation
+  growth_checks$age_effects            # Age-specific CV patterns
+  growth_checks$length_distribution$qq_plot  # Q-Q plot comparison
 }
 ```
 
@@ -277,13 +347,35 @@ For a complete example, see the example script in the package:
 file.path(system.file(package = "growthVB"), "examples", "example_usage.R")
 ```
 
+## Citation
+
+To cite growthVB in publications, please use:
+
+```r
+citation("growthVB")
+```
+
+This will provide the appropriate citation format. For manual citation:
+
+> Dunn, A. (2025). growthVB: Von Bertalanffy Growth Curve Estimation with Heteroscedastic Errors. R package version 0.2.0. <https://github.com/alistairdunn1/growthVB>
+
+When using specific functionality, please also cite:
+
+- **Bayesian models**: Bürkner (2017) for brms, Carpenter et al. (2017) for Stan
+- **von Bertalanffy equation**: von Bertalanffy (1957)
+- **Heteroscedastic growth models**: Kimura (2008)
+
 ## References
 
-Von Bertalanffy, L. (1957). Quantitative laws in metabolism and growth. *The Quarterly Review of Biology*, 32(3), 217-231.
+Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
+
+Carpenter, B., Gelman, A., Hoffman, M. D., Lee, D., Goodrich, B., Betancourt, M., ... & Riddell, A. (2017). Stan: A probabilistic programming language. *Journal of Statistical Software*, 76(1).
 
 Kimura, D. K. (2008). Extending the von Bertalanffy growth model using explanatory variables. *Canadian Journal of Fisheries and Aquatic Sciences*, 65(9), 1879-1891.
 
 Okuda, T., Somhlaba, S., Sarralde, R., Mori, M., Rojo, V., & Dunn, A. (2025). Characterisation of the toothfish fishery in Subarea 48.6 through the 2024/25 season. CCAMLR Working Group Paper, WG-FSA-2025/34, Hobart.
+
+Von Bertalanffy, L. (1957). Quantitative laws in metabolism and growth. *The Quarterly Review of Biology*, 32(3), 217-231.
 
 ## License
 

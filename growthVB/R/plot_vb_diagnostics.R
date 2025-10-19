@@ -34,7 +34,7 @@ plot_vb_diagnostics <- function(model) {
     # Residuals vs Fitted
     p1 <- ggplot2::ggplot(data, ggplot2::aes(x = fitted, y = residual)) +
       ggplot2::geom_point(colour = "royalblue", alpha = 0.8, size = 1.2) +
-      ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+      ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = "red") +
       ggplot2::geom_smooth(se = FALSE, colour = "black", method = "loess") +
       ggplot2::labs(
         x = "Fitted values",
@@ -65,7 +65,7 @@ plot_vb_diagnostics <- function(model) {
     # Residuals vs Age
     p4 <- ggplot2::ggplot(data, ggplot2::aes(x = age, y = residual)) +
       ggplot2::geom_point(colour = "royalblue", alpha = 0.8, size = 1.2) +
-      ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+      ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = "red") +
       ggplot2::geom_smooth(se = FALSE, colour = "black", method = "loess") +
       ggplot2::labs(
         x = "Age",

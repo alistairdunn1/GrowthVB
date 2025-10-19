@@ -49,17 +49,22 @@ plot_vb_posteriors <- function(model, ndraws = 50) {
 
     # Parameter posterior densities
     post_samples <- brms::posterior_samples(brms_model)
-    param_names <- c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept")
-    param_labels <- c("Linf", "k", "t0")
+    param_names <- c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_CV_Intercept")
+    param_labels <- c("Linf", "k", "t0", "CV")
+
+    # Check which parameters are available
+    available_params <- param_names[param_names %in% names(post_samples)]
+    available_labels <- param_labels[param_names %in% names(post_samples)]
 
     # Reshape for plotting
+    param_values <- list()
+    for (i in seq_along(available_params)) {
+      param_values[[i]] <- post_samples[[available_params[i]]]
+    }
+
     post_df <- data.frame(
-      parameter = rep(param_labels, each = nrow(post_samples)),
-      value = c(
-        post_samples$b_Linf_Intercept,
-        post_samples$b_k_Intercept,
-        post_samples$b_t0_Intercept
-      )
+      parameter = rep(available_labels, each = nrow(post_samples)),
+      value = unlist(param_values)
     )
 
     # Create parameter density plots
@@ -79,6 +84,11 @@ plot_vb_posteriors <- function(model, ndraws = 50) {
         k = post_samples$b_k_Intercept,
         t0 = post_samples$b_t0_Intercept
       )
+
+      # Add CV if available
+      if ("b_CV_Intercept" %in% names(post_samples)) {
+        pairs_df$CV <- post_samples$b_CV_Intercept
+      }
 
       pairs_plot <- GGally::ggpairs(pairs_df) +
         ggplot2::labs(title = paste("Parameter Correlations", title_suffix))

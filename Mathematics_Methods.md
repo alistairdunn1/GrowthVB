@@ -34,7 +34,7 @@ $$L_i = L_\infty \cdot (1 - e^{-k(t_i-t_0)}) + \varepsilon_i$$
 
 Where $\varepsilon_i \sim \mathcal{N}(0, \sigma_i^2)$ represents random error with heteroscedastic variance.
 
-### 3.2 Heteroscedasticity Modeling
+### 3.2 Heteroscedasticity Modelling
 
 In fish growth data, variance often increases with fish size. We explicitly model this heteroscedasticity by specifying that the standard deviation is proportional to the expected length:
 
@@ -59,11 +59,11 @@ Substituting $\sigma_i = \text{CV} \cdot \hat{L}_i$:
 
 $$-\ln(\mathcal{L}) = \sum_{i=1}^{n} \left[ \ln(\text{CV} \cdot \hat{L}_i) + \frac{1}{2} \ln(2\pi) + \frac{(L_i - \hat{L}_i)^2}{2(\text{CV} \cdot \hat{L}_i)^2} \right]$$
 
-We minimize this function using the `optim()` function in R, with the L-BFGS-B algorithm as the default optimization method. This bounded optimization approach helps ensure parameters remain within realistic ranges and improves convergence for the Hessian matrix calculation needed for confidence intervals.
+We minimise this function using the `optim()` function in R, with the L-BFGS-B algorithm as the default optimisation method. This bounded optimisation approach helps ensure parameters remain within realistic ranges and improves convergence for the Hessian matrix calculation needed for confidence intervals.
 
 ### 3.4 Parameter Uncertainty
 
-We estimate the variance-covariance matrix of the parameters using the inverse of the Hessian matrix from the optimization procedure:
+We estimate the variance-covariance matrix of the parameters using the inverse of the Hessian matrix from the optimisation procedure:
 
 $$\text{Var-Cov} \approx H^{-1}$$
 
@@ -83,15 +83,15 @@ For derived quantities like predicted lengths at given ages, we use the delta me
 
 The likelihood function for this model is:
 
-$$L(L_\infty, k, t_0, \tau | \text{data}) = \prod_{i=1}^{n} \frac{1}{\tau \cdot \hat{L}_i \cdot \sqrt{2\pi}} \exp\left(-\frac{(L_i - \hat{L}_i)^2}{2 \cdot (\tau \cdot \hat{L}_i)^2}\right)$$
+$$L(L_\infty, k, t_0, CV | \text{data}) = \prod_{i=1}^{n} \frac{1}{CV \cdot \hat{L}_i \cdot \sqrt{2\pi}} \exp\left(-\frac{(L_i - \hat{L}_i)^2}{2 \cdot (CV \cdot \hat{L}_i)^2}\right)$$
 
 Where $\hat{L}_i = L_\infty \cdot (1 - e^{-k(t_i-t_0)})$
 
-We maximize the log-likelihood:
+We maximise the log-likelihood:
 
-$$\ell(L_\infty, k, t_0, \tau | \text{data}) = -\sum_{i=1}^{n} \left[\log(\tau \cdot \hat{L}_i) + \frac{(L_i - \hat{L}_i)^2}{2 \cdot (\tau \cdot \hat{L}_i)^2} + \frac{1}{2}\log(2\pi)\right]$$
+$$\ell(L_\infty, k, t_0, CV | \text{data}) = -\sum_{i=1}^{n} \left[\log(CV \cdot \hat{L}_i) + \frac{(L_i - \hat{L}_i)^2}{2 \cdot (CV \cdot \hat{L}_i)^2} + \frac{1}{2}\log(2\pi)\right]$$
 
-This is accomplished using numerical optimization methods such as L-BFGS-B (default) or other bounded optimization approaches, which help ensure parameter estimates remain within realistic biological ranges.
+This is accomplished using numerical optimisation methods such as L-BFGS-B (default) or other bounded optimisation approaches, which help ensure parameter estimates remain within realistic biological ranges.
 
 ### 3.4 Confidence Intervals
 
@@ -109,7 +109,7 @@ In the Bayesian approach, we specify a full probability model:
 
 $$L_i \sim \mathcal{N}(\mu_i, \sigma_i^2)$$
 $$\mu_i = L_\infty \cdot (1 - e^{-k(t_i-t_0)})$$
-$$\sigma_i = \tau \cdot \mu_i$$
+$$\sigma_i = CV \cdot \mu_i$$
 
 ### 4.2 Prior Distributions
 
@@ -118,7 +118,7 @@ We specify prior distributions for all parameters:
 $$L_\infty \sim \mathcal{N}(\mu_{L_\infty}, \sigma_{L_\infty}^2)$$
 $$k \sim \mathcal{N}^+(\mu_k, \sigma_k^2) \quad \text{(Half-normal, k > 0)}$$
 $$t_0 \sim \mathcal{N}(\mu_{t_0}, \sigma_{t_0}^2)$$
-$$\tau \sim \mathcal{N}^+(\mu_{\tau}, \sigma_{\tau}^2) \quad \text{(Half-normal, \tau > 0)}$$
+$$CV \sim \mathcal{N}^+(\mu_{CV}, \sigma_{CV}^2) \quad \text{(Half-normal, CV > 0)}$$
 
 Where the hyperparameters ($\mu_{L_\infty}$, $\sigma_{L_\infty}$, etc.) are chosen based on biological knowledge or set to be weakly informative.
 
@@ -126,7 +126,7 @@ Where the hyperparameters ($\mu_{L_\infty}$, $\sigma_{L_\infty}$, etc.) are chos
 
 Using Markov Chain Monte Carlo (MCMC) sampling, we estimate the posterior distribution:
 
-$$p(L_\infty, k, t_0, \tau | \text{data}) \propto p(\text{data}|L_\infty, k, t_0, \tau) \cdot p(L_\infty) \cdot p(k) \cdot p(t_0) \cdot p(\tau)$$
+$$p(L_\infty, k, t_0, CV | \text{data}) \propto p(\text{data}|L_\infty, k, t_0, CV) \cdot p(L_\infty) \cdot p(k) \cdot p(t_0) \cdot p(CV)$$
 
 ### 4.4 Credible Intervals
 
@@ -185,7 +185,7 @@ The posterior predictive distribution for a new observation $\tilde{L}$ at age $
 
 $$p(\tilde{L}|\tilde{t},\text{data}) = \int p(\tilde{L}|\tilde{t},\theta) \cdot p(\theta|\text{data}) \, d\theta$$
 
-Where $\theta = (L_\infty, k, t_0, \tau)$ represents all model parameters.
+Where $\theta = (L_\infty, k, t_0, CV)$ represents all model parameters.
 
 ### 7.2 Graphical Checks
 
@@ -199,7 +199,7 @@ Posterior predictive checks include:
 
 The `growthVB` package implements these methods with the following core functions:
 
-1. `fit_vb_mle()`: Frequentist MLE estimation with optional heteroscedasticity modeling
+1. `fit_vb_mle()`: Frequentist MLE estimation with optional heteroscedasticity modelling
 2. `fit_vb_brms()`: Bayesian estimation using the brms package with Stan backend
 3. `plot_vb_predictions()`: Visualizing model fit with confidence/credible intervals
 4. `plot_vb_posteriors()`: Diagnostic plots for Bayesian models including posterior distributions and correlations

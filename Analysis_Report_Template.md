@@ -116,7 +116,7 @@ plot_vb_age_counts(age = age_data, sex = sex_data)
 plot_vb_age_counts(age = age_data, group = group_data)
 ```
 
-*[Additional visualizations as needed]*
+*[Additional visualisations as needed]*
 
 #### 4.1.4 Age-Length Relationship Overview
 
@@ -183,7 +183,7 @@ plot_empirical_cv(age = age_data, length = length_data, sex = sex_data)
 | t₀        | [value]  | [value]        | [value]      | [value]      |
 | CV        | [value]  | [value]        | [value]      | [value]      |
 
-*[Insert sex-specific growth curve plot with different colors/symbols for each sex]*
+*[Insert sex-specific growth curve plot with different colours/symbols for each sex]*
 
 ### 4.3 Model Diagnostics
 
@@ -244,7 +244,7 @@ diagnostics$residuals_vs_age     # Residuals vs age
 
 ## 6. Conclusions
 
-*[Summarize the main findings and their implications for fisheries management, stock assessment, or other applications]*
+*[Summarise the main findings and their implications for fisheries management, stock assessment, or other applications]*
 
 ## 7. References
 

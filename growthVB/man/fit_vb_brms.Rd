@@ -12,6 +12,8 @@ fit_vb_brms(
   prior_overrides = NULL,
   chains = 4,
   iter = 4000,
+  cores = chains,
+  parallel_sex = TRUE,
   ...
 )
 }
@@ -32,6 +34,10 @@ specification strings accepted by brms (e.g. "normal(120, 30)"). Ignored if \cod
 
 \item{iter}{Number of iterations for each chain (default 4000)}
 
+\item{cores}{Number of CPU cores to use for parallel processing (default: number of chains)}
+
+\item{parallel_sex}{Logical. If TRUE and sex-specific models are being fit, run models for different sexes in parallel (default TRUE)}
+
 \item{...}{Additional arguments passed to brms::brm()}
 }
 \value{
@@ -51,6 +57,10 @@ of the mean length.
 age <- 1:15
 length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
 fit <- fit_vb_brms(age = age, length = length)
+
+# Sex-specific models run in parallel
+sex <- rep(c("M", "F"), length.out = 15)
+fit_sex <- fit_vb_brms(age = age, length = length, sex = sex, parallel_sex = TRUE)
 }
 
 }

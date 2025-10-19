@@ -11,7 +11,7 @@ fit_vb_mle(
   length_bins = NULL,
   sampling_prob = 1,
   ci_level = 0.95,
-  optim_method = "BFGS",
+  optim_method = "L-BFGS-B",
   maxit = 1000
 )
 }
@@ -28,7 +28,7 @@ fit_vb_mle(
 
 \item{ci_level}{Confidence interval level (default 0.95)}
 
-\item{optim_method}{Optimization method for stats::optim (default "BFGS")}
+\item{optim_method}{Optimization method for stats::optim (default "L-BFGS-B")}
 
 \item{maxit}{Maximum number of iterations for optimization (default 1000)}
 }

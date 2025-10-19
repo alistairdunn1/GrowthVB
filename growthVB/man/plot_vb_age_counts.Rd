@@ -4,34 +4,27 @@
 \alias{plot_vb_age_counts}
 \title{Plot frequency distribution of age samples}
 \usage{
-plot_vb_age_counts(
-  age,
-  year = NULL,
-  sex = NULL,
-  theme_fn = ggplot2::theme_minimal()
-)
+plot_vb_age_counts(age, group = NULL, sex = NULL)
 }
 \arguments{
 \item{age}{A numeric vector of age values.}
 
-\item{year}{An optional vector of years (same length as age).}
+\item{group}{An optional vector of grouping variables (same length as age).}
 
 \item{sex}{An optional vector of sex values (same length as age).}
-
-\item{theme_fn}{A ggplot2 theme function (default: theme_minimal).}
 }
 \value{
 A ggplot2 object.
 }
 \description{
-This function creates bar charts of age frequency distributions, optionally separated by year and/or sex.
+This function creates bar charts of age frequency distributions, optionally separated by group and/or sex.
 }
 \examples{
 \dontrun{
 # Simple example with simulated data
 age <- 1:15
-years <- sample(2020:2023, 15, replace = TRUE)
-plot_vb_age_counts(age = age, year = years)
+groups <- sample(c("A", "B", "C"), 15, replace = TRUE)
+plot_vb_age_counts(age = age, group = groups)
 }
 
 }

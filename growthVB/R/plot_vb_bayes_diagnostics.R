@@ -30,7 +30,7 @@
 #'
 #' @export
 plot_vb_bayes_diagnostics <- function(model,
-                                      ndraws = 50,
+                                      ndraws = 100,
                                       diagnostic_types = "all",
                                       pars = NULL) {
   # Check required packages
@@ -196,8 +196,7 @@ plot_vb_bayes_diagnostics <- function(model,
           ggplot2::labs(
             title = paste("Posterior Residual Distributions vs Fitted", title_suffix),
             x = "Fitted Values (binned)", y = "Residuals"
-          ) +
-          ggplot2::theme_minimal()
+          )
 
         # Alternative: point + ribbon plot showing quantiles
         residual_summary <- aggregate(residual ~ fitted_bin, residual_long, function(x) {
@@ -221,8 +220,7 @@ plot_vb_bayes_diagnostics <- function(model,
             title = paste("Residual Quantiles vs Fitted", title_suffix),
             x = "Fitted Values", y = "Residuals",
             subtitle = "Dark band: 50% interval, Light band: 90% interval, Line: median"
-          ) +
-          ggplot2::theme_minimal()
+          )
 
         model_diagnostics$residuals <- list(
           violin_plot = residual_violin,
@@ -334,8 +332,7 @@ plot_vb_bayes_diagnostics <- function(model,
               ggplot2::labs(
                 title = paste("Posterior Residual Distributions by Age", title_suffix),
                 x = "Age (binned)", y = "Residuals"
-              ) +
-              ggplot2::theme_minimal()
+              )
 
             age_residual_plot <- age_residual_violin
           } else {
@@ -449,8 +446,7 @@ plot_vb_bayes_diagnostics <- function(model,
                 title = paste("Enhanced Prediction Uncertainty", title_suffix),
                 x = "Age", y = "Predicted Length",
                 subtitle = "Ribbons: 50% (dark), 80% (medium), 90% (light) prediction intervals"
-              ) +
-              ggplot2::theme_minimal()
+              )
           }
 
           model_diagnostics$growth_specific <- list(

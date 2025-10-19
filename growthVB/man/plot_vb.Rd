@@ -4,12 +4,7 @@
 \alias{plot_vb}
 \title{Plot von Bertalanffy Growth Curve}
 \usage{
-plot_vb(
-  model,
-  point_alpha = 0.5,
-  show_ci = TRUE,
-  theme_fn = ggplot2::theme_minimal()
-)
+plot_vb(model, point_alpha = 0.5, show_ci = TRUE)
 }
 \arguments{
 \item{model}{A model object returned by fit_vb_mle() or fit_vb_brms()}
@@ -17,8 +12,6 @@ plot_vb(
 \item{point_alpha}{Transparency of data points (default 0.5)}
 
 \item{show_ci}{Whether to display confidence intervals (default TRUE)}
-
-\item{theme_fn}{Optional ggplot2 theme function to apply (default theme_minimal)}
 }
 \value{
 A ggplot2 object

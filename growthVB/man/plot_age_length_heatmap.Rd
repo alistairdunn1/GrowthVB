@@ -10,7 +10,7 @@ plot_age_length_heatmap(
   sex = NULL,
   bin_width_age = 1,
   bin_width_length = 5,
-  theme_fn = ggplot2::theme_minimal()
+  add_smoother = TRUE
 )
 }
 \arguments{
@@ -24,13 +24,13 @@ plot_age_length_heatmap(
 
 \item{bin_width_length}{Width of length bins (default 5)}
 
-\item{theme_fn}{Optional ggplot2 theme function to apply (default theme_minimal)}
+\item{add_smoother}{Logical, whether to add a smoother line showing the age-length relationship (default TRUE)}
 }
 \value{
 A ggplot2 object
 }
 \description{
-This function creates a heatmap of the age-length observations to visualize
+This function creates a heatmap of the age-length observations to visualise
 the distribution of samples.
 }
 \examples{

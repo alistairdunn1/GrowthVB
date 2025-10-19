@@ -15,7 +15,11 @@
 \arguments{
 \item{object}{A fitted model object of class vb_mle}
 
-\item{newdata}{A data frame containing 'age' values for prediction}
+\item{newdata}{A data frame containing required variables for prediction:
+\itemize{
+\item For single models: 'age' (numeric)
+\item For sex-specific models: 'age' (numeric) and 'sex' (factor/character)
+}}
 
 \item{interval}{Type of interval calculation: "none", "confidence", or "prediction"}
 

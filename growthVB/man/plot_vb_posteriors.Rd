@@ -4,14 +4,12 @@
 \alias{plot_vb_posteriors}
 \title{Plot Posterior Predictive Checks for von Bertalanffy Bayesian Models}
 \usage{
-plot_vb_posteriors(model, ndraws = 50, theme_fn = ggplot2::theme_minimal())
+plot_vb_posteriors(model, ndraws = 50)
 }
 \arguments{
 \item{model}{A model object returned by fit_vb_brms()}
 
 \item{ndraws}{Number of posterior draws to include (default 50)}
-
-\item{theme_fn}{Optional ggplot2 theme function to apply (default theme_minimal)}
 }
 \value{
 A list of ggplot2 objects

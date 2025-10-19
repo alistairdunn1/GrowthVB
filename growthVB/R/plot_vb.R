@@ -5,7 +5,6 @@
 #' @param model A model object returned by fit_vb_mle() or fit_vb_brms()
 #' @param point_alpha Transparency of data points (default 0.5)
 #' @param show_ci Whether to display confidence intervals (default TRUE)
-#' @param theme_fn Optional ggplot2 theme function to apply (default theme_minimal)
 #'
 #' @return A ggplot2 object
 #'
@@ -19,14 +18,13 @@
 #' }
 #'
 #' @export
-plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
-                    theme_fn = ggplot2::theme_minimal()) {
+plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE) {
   if (inherits(model, "vb_mle")) {
     # Plot for MLE model
     if ("sex" %in% names(model$data)) {
       # Model with sex
       p <- ggplot2::ggplot(model$data, ggplot2::aes(x = age, y = length, colour = sex)) +
-        ggplot2::geom_point(alpha = point_alpha) +
+        ggplot2::geom_point(alpha = 0.8, size = 1.2) +
         ggplot2::geom_line(data = model$fits, ggplot2::aes(x = age, y = mean), linewidth = 1)
 
       if (show_ci) {
@@ -48,15 +46,14 @@ plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
       p <- p + ggplot2::facet_wrap(~sex) +
         ggplot2::labs(x = "Age", y = "Length") +
         ggplot2::scale_x_continuous(expand = c(0, 0), limits = c(0, NA)) +
-        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
-        theme_fn
+        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, NA))
     } else {
       # Single model
       p <- ggplot2::ggplot(model$data, ggplot2::aes(x = age, y = length)) +
-        ggplot2::geom_point(alpha = point_alpha) +
+        ggplot2::geom_point(alpha = 0.8, size = 1.2, colour = "royalblue") +
         ggplot2::geom_line(
           data = model$fits, ggplot2::aes(x = age, y = mean),
-          colour = "blue", linewidth = 1
+          colour = "royalblue", linewidth = 1
         )
 
       if (show_ci) {
@@ -65,20 +62,19 @@ plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
           p <- p + ggplot2::geom_line(
             data = model$fits[!is.na(model$fits$lowerCI), ],
             ggplot2::aes(x = age, y = lowerCI),
-            colour = "blue", linetype = "dashed"
+            colour = "royalblue", linetype = "dashed"
           ) +
             ggplot2::geom_line(
               data = model$fits[!is.na(model$fits$upperCI), ],
               ggplot2::aes(x = age, y = upperCI),
-              colour = "blue", linetype = "dashed"
+              colour = "royalblue", linetype = "dashed"
             )
         }
       }
 
       p <- p + ggplot2::labs(x = "Age", y = "Length") +
         ggplot2::scale_x_continuous(expand = c(0, 0), limits = c(0, NA)) +
-        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
-        theme_fn
+        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, NA))
     }
   } else if (inherits(model, "vb_brms")) {
     # Plot for brms model
@@ -89,9 +85,7 @@ plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
 
       # Create plot
       p <- ggplot2::ggplot(data = preds_combined) +
-        ggplot2::geom_ribbon(ggplot2::aes(x = age, ymin = Q2.5, ymax = Q97.5, fill = Sex),
-          alpha = 0.3
-        ) +
+        ggplot2::geom_ribbon(ggplot2::aes(x = age, ymin = Q2.5, ymax = Q97.5, fill = Sex), alpha = 0.3) +
         ggplot2::geom_line(ggplot2::aes(x = age, y = Estimate, colour = Sex), linewidth = 1)
 
       # Add original data points if available
@@ -106,22 +100,21 @@ plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
         p <- p + ggplot2::geom_point(
           data = data_combined,
           ggplot2::aes(x = age, y = length, colour = Sex),
-          alpha = point_alpha
+          alpha = 0.8, size = 1.2
         )
       }
 
       p <- p + ggplot2::labs(x = "Age", y = "Length") +
         ggplot2::scale_x_continuous(expand = c(0, 0), limits = c(0, NA)) +
-        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
-        theme_fn
+        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, NA))
     } else {
       # Single model
       p <- ggplot2::ggplot(data = model$predictions) +
         ggplot2::geom_ribbon(ggplot2::aes(x = age, ymin = Q2.5, ymax = Q97.5),
-          alpha = 0.3, fill = "blue"
+          alpha = 0.3, fill = "royalblue"
         ) +
         ggplot2::geom_line(ggplot2::aes(x = age, y = Estimate),
-          colour = "blue", linewidth = 1
+          colour = "royalblue", linewidth = 1
         )
 
       # Add original data points if available
@@ -129,14 +122,13 @@ plot_vb <- function(model, point_alpha = 0.5, show_ci = TRUE,
         p <- p + ggplot2::geom_point(
           data = model$models$data,
           ggplot2::aes(x = age, y = length),
-          alpha = point_alpha
+          alpha = 0.8, size = 1.2, colour = "royalblue"
         )
       }
 
       p <- p + ggplot2::labs(x = "Age", y = "Length") +
         ggplot2::scale_x_continuous(expand = c(0, 0), limits = c(0, NA)) +
-        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
-        theme_fn
+        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, NA))
     }
   } else {
     stop("Input must be a model object from fit_vb_mle() or fit_vb_brms()")

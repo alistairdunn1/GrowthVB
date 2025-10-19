@@ -28,8 +28,8 @@ devtools::install_github("alistairdunn1/growthVB", subdir = "growthVB")
 - Parameter estimation with 95% confidence/credible intervals
 - Predictions with confidence and prediction intervals
 - Visualize growth curves and underlying data
-- Produce diagnostic plots
-- Generate age-length heatmaps and age frequency summaries
+- Produce diagnostic plots including empirical CV analysis
+- Generate age-length heatmaps with optional smoothers and age frequency summaries
 - Posterior predictive checks for Bayesian models
 
 ## Core Functions
@@ -46,7 +46,7 @@ fit_vb_mle(
   length_bins = NULL,  # Optional numeric vector of length bin midpoints
   sampling_prob = 1,   # Optional vector of sampling probabilities (defaults to 1)
   ci_level = 0.95,     # Confidence interval level (default 0.95)
-  optim_method = "BFGS", # Optimization method for stats::optim (default "BFGS")
+  optim_method = "L-BFGS-B", # Optimization method for stats::optim (default "L-BFGS-B")
   maxit = 1000         # Maximum number of iterations for optimization
 )
 ```
@@ -58,7 +58,7 @@ fit_vb_mle(
 - **CV modeling**: Explicitly models coefficient of variation as a function of mean length
 - **Heteroscedastic variance**: Accounts for increasing variance with fish length
 - **Parameter uncertainty**: Provides standard errors and confidence intervals for all parameters
-- **Robust fitting**: Includes intelligent starting value estimation and multiple optimization methods
+- **Robust fitting**: Uses bounded optimization (L-BFGS-B) with intelligent starting values for reliable parameter estimation and confidence intervals
 
 #### `fit_vb_brms()`: Bayesian Von Bertalanffy Model Fitting
 
@@ -92,15 +92,15 @@ fit_vb_brms(
 ### Analysis
 
 - `summarize_vb()`: Summarize parameter estimates with confidence/credible intervals
-- `compare_vb()`: Statistical comparison of multiple growth models
 
 ### Visualization
 
 - `plot_vb()`: Plot growth curves with data points
 - `plot_vb_diagnostics()`: Produce standard regression diagnostics plots
 - `plot_vb_posteriors()`: Generate posterior predictive plots for Bayesian models
-- `plot_age_length_heatmap()`: Create heatmap visualizations of age-length observations
-- `plot_vb_age_counts()`: Plot frequency distribution of age samples
+- `plot_age_length_heatmap()`: Create heatmap visualizations of age-length observations with optional smoothers
+- `plot_vb_age_counts()`: Plot frequency distribution of age samples by group variables
+- `plot_empirical_cv()`: Plot empirical coefficient of variation by age for data exploration
 
 ## Example Usage
 
@@ -111,15 +111,13 @@ library(growthVB)
 
 # Simple example with simulated data (heteroscedastic errors)
 set.seed(123)
-n <- 100
 true_Linf <- 120
 true_k <- 0.25
 true_t0 <- -0.5
 true_cv <- 0.1
 
-# Generate ages
-age <- 1:15
-age <- rep(age, each = 6)  # Multiple observations per age
+# Generate ages (multiple observations per age)
+age <- rep(1:15, each = 6)
 age <- age + rnorm(length(age), 0, 0.1)  # Add some noise
 
 # Generate lengths with heteroscedastic error (SD = CV * predicted length)
@@ -138,6 +136,15 @@ summarize_vb(fit)
 
 # Plot growth curve
 plot_vb(fit)
+
+# Generate diagnostic plots
+diagnostics <- plot_vb_diagnostics(fit)
+
+# Create age-length heatmap with smoother
+heatmap_plot <- plot_age_length_heatmap(age = age, length = length, add_smoother = TRUE)
+
+# Plot empirical CV by age
+cv_plot <- plot_empirical_cv(age = age, length = length)
 
 # Generate predictions with confidence intervals
 new_ages <- data.frame(age = seq(1, 15, by = 1))
@@ -194,13 +201,11 @@ summarize_vb(fit_sex)
 # Plot sex-specific growth curves
 plot_vb(fit_sex)
 
-# Compare parameters between sexes
-cat("\nGrowth parameter comparison by sex:\n")
-params <- fit_sex$parameters
-params_f <- params[grep("F", rownames(params)), ]
-params_m <- params[grep("M", rownames(params)), ]
-print(rbind(Females = params_f[1:3, "estimate"], 
-            Males = params_m[1:3, "estimate"]))
+# Plot age counts by sex
+age_counts_plot <- plot_vb_age_counts(age = age, sex = sex)
+
+# Compare CV patterns between sexes
+cv_plot_sex <- plot_empirical_cv(age = age, length = length, sex = sex)
 
 # Make predictions for specific ages by sex
 new_data <- data.frame(
@@ -233,7 +238,12 @@ fit_binned <- fit_vb_mle(
 
 # Compare with uncorrected model
 fit_uncorrected <- fit_vb_mle(age = age, length = length)
-compare_vb(list(Corrected = fit_binned, Uncorrected = fit_uncorrected))
+
+# Compare parameter estimates
+cat("Binned model parameters:\n")
+print(fit_binned$parameters)
+cat("Uncorrected model parameters:\n") 
+print(fit_uncorrected$parameters)
 ```
 
 ### Bayesian Model

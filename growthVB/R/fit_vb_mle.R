@@ -10,7 +10,7 @@
 #' @param length_bins Optional numeric vector specifying length bins for analysis
 #' @param sampling_prob Optional vector of sampling probabilities (defaults to 1)
 #' @param ci_level Confidence interval level (default 0.95)
-#' @param optim_method Optimization method for stats::optim (default "BFGS")
+#' @param optim_method Optimization method for stats::optim (default "L-BFGS-B")
 #' @param maxit Maximum number of iterations for optimization (default 1000)
 #'
 #' @return A list containing:
@@ -30,7 +30,7 @@
 #' @export
 fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
                        sampling_prob = 1, ci_level = 0.95,
-                       optim_method = "BFGS", maxit = 1000) {
+                       optim_method = "L-BFGS-B", maxit = 1000) {
   # Create data frame for analysis
   data <- data.frame(age = age, length = length)
 
@@ -51,11 +51,22 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
 
   # Function to fit a model to a subset of the data using maximum likelihood
   fit_model <- function(subset_data) {
-    # Initial parameter estimates
-    Linf_init <- max(subset_data$length, na.rm = TRUE) * 1.2
-    k_init <- 0.3
-    t0_init <- -0.5
-    cv_init <- 0.1 # Initial coefficient of variation
+    # Better initial parameter estimates based on data
+    Linf_init <- max(subset_data$length, na.rm = TRUE) * 1.1 # Slightly above max observed length
+
+    # Estimate k from growth rate - use simple linear approximation
+    if (nrow(subset_data) > 1) {
+      # Simple linear model to get rough k estimate
+      lm_rough <- lm(log(Linf_init - subset_data$length + 1) ~ subset_data$age)
+      k_init <- max(0.05, min(2.0, -coef(lm_rough)[2])) # Bound k between 0.05 and 2.0
+    } else {
+      k_init <- 0.2
+    }
+
+    # Estimate t0 from intercept or use reasonable default
+    t0_init <- min(subset_data$age) - 1 # Set t0 to be before the youngest age
+
+    cv_init <- 0.15 # Initial coefficient of variation
 
     # Negative log-likelihood function with CV as a function of predicted length
     neg_log_likelihood <- function(params) {
@@ -112,16 +123,37 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
     # Initial parameter vector
     init_params <- c(Linf = Linf_init, k = k_init, t0 = t0_init, cv = cv_init)
 
-    # Try optimization with different methods if needed
-    optim_result <- try(
-      stats::optim(
-        par = init_params,
-        fn = neg_log_likelihood,
-        method = optim_method,
-        control = list(maxit = maxit, trace = FALSE)
-      ),
-      silent = TRUE
-    )
+    # Try optimization with bounds to ensure reasonable parameter values
+    if (optim_method %in% c("L-BFGS-B")) {
+      # Use bounded optimization
+      lower_bounds <- c(Linf = max(subset_data$length) * 0.5, k = 0.001, t0 = min(subset_data$age) - 5, cv = 0.01)
+      upper_bounds <- c(Linf = max(subset_data$length) * 3, k = 3.0, t0 = max(subset_data$age) + 2, cv = 1.0)
+
+      optim_result <- try(
+        stats::optim(
+          par = init_params,
+          fn = neg_log_likelihood,
+          method = optim_method,
+          lower = lower_bounds,
+          upper = upper_bounds,
+          hessian = TRUE,
+          control = list(maxit = maxit, trace = FALSE)
+        ),
+        silent = TRUE
+      )
+    } else {
+      # Use unbounded optimization
+      optim_result <- try(
+        stats::optim(
+          par = init_params,
+          fn = neg_log_likelihood,
+          method = optim_method,
+          hessian = TRUE,
+          control = list(maxit = maxit, trace = FALSE)
+        ),
+        silent = TRUE
+      )
+    }
 
     # If first attempt fails, try with Nelder-Mead method
     if (inherits(optim_result, "try-error") || optim_result$convergence != 0) {
@@ -131,6 +163,7 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
           par = init_params,
           fn = neg_log_likelihood,
           method = "Nelder-Mead",
+          hessian = TRUE,
           control = list(maxit = 2000, trace = FALSE)
         ),
         silent = TRUE
@@ -151,6 +184,7 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
             par = init_params,
             fn = neg_log_likelihood,
             method = "BFGS",
+            hessian = TRUE,
             control = list(maxit = 2000, trace = FALSE)
           ),
           silent = TRUE
@@ -169,7 +203,7 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
       value = optim_result$value,
       counts = optim_result$counts,
       message = optim_result$message,
-      hessian = if ("hessian" %in% names(optim_result)) optim_result$hessian else NULL,
+      hessian = optim_result$hessian,
       data = subset_data,
       vb_mean = vb_mean
     )
@@ -178,16 +212,27 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
     if (!is.null(model$hessian)) {
       tryCatch(
         {
+          # Check if Hessian is positive definite
+          eigenvalues <- eigen(model$hessian, only.values = TRUE)$values
+          if (any(eigenvalues <= 0)) {
+            warning("Hessian matrix is not positive definite. Standard errors may be unreliable.")
+          }
+
           vcov_matrix <- solve(model$hessian)
           model$se <- sqrt(diag(vcov_matrix))
           model$vcov <- vcov_matrix
         },
         error = function(e) {
-          warning("Could not compute standard errors: ", e$message)
+          warning("Could not compute standard errors from Hessian matrix: ", e$message)
+          warning("This often indicates convergence issues or poorly conditioned optimization.")
           model$se <- rep(NA, length(model$parameters))
           model$vcov <- matrix(NA, nrow = length(model$parameters), ncol = length(model$parameters))
         }
       )
+    } else {
+      warning("Hessian matrix not available. Cannot compute confidence intervals.")
+      model$se <- rep(NA, length(model$parameters))
+      model$vcov <- matrix(NA, nrow = length(model$parameters), ncol = length(model$parameters))
     }
 
     class(model) <- c("vb_optim", "list")

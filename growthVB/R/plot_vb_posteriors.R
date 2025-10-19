@@ -4,7 +4,6 @@
 #'
 #' @param model A model object returned by fit_vb_brms()
 #' @param ndraws Number of posterior draws to include (default 50)
-#' @param theme_fn Optional ggplot2 theme function to apply (default theme_minimal)
 #'
 #' @return A list of ggplot2 objects
 #'
@@ -19,7 +18,7 @@
 #' }
 #'
 #' @export
-plot_vb_posteriors <- function(model, ndraws = 50, theme_fn = ggplot2::theme_minimal()) {
+plot_vb_posteriors <- function(model, ndraws = 50) {
   # Check if brms is installed
   if (!requireNamespace("brms", quietly = TRUE)) {
     stop("Package 'brms' is required for this function. Please install it.",
@@ -46,8 +45,7 @@ plot_vb_posteriors <- function(model, ndraws = 50, theme_fn = ggplot2::theme_min
 
     # Posterior predictive check
     pp_check <- bayesplot::pp_check(brms_model, ndraws = ndraws) +
-      ggplot2::labs(title = paste("Posterior Predictive Check", title_suffix)) +
-      theme_fn
+      ggplot2::labs(title = paste("Posterior Predictive Check", title_suffix))
 
     # Parameter posterior densities
     post_samples <- brms::posterior_samples(brms_model)
@@ -71,8 +69,7 @@ plot_vb_posteriors <- function(model, ndraws = 50, theme_fn = ggplot2::theme_min
       ggplot2::labs(
         title = paste("Parameter Posterior Distributions", title_suffix),
         x = "Value", y = "Density"
-      ) +
-      theme_fn
+      )
 
     # Parameter pair plots
     pairs_plot <- NULL
@@ -84,8 +81,7 @@ plot_vb_posteriors <- function(model, ndraws = 50, theme_fn = ggplot2::theme_min
       )
 
       pairs_plot <- GGally::ggpairs(pairs_df) +
-        ggplot2::labs(title = paste("Parameter Correlations", title_suffix)) +
-        theme_fn
+        ggplot2::labs(title = paste("Parameter Correlations", title_suffix))
     }
 
     # Conditional effects
@@ -101,8 +97,7 @@ plot_vb_posteriors <- function(model, ndraws = 50, theme_fn = ggplot2::theme_min
       ce <- try(brms::conditional_effects(brms_model, spaghetti = TRUE, ndraws = 10), silent = TRUE)
       if (!inherits(ce, "try-error")) {
         ce_plot <- plot(ce)[[1]] +
-          ggplot2::labs(title = paste("Conditional Effects", title_suffix)) +
-          theme_fn
+          ggplot2::labs(title = paste("Conditional Effects", title_suffix))
       }
     }
 

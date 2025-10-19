@@ -4,7 +4,6 @@
 #' including residual plots, Q-Q plots, and other diagnostics.
 #'
 #' @param model A model object returned by fit_vb_mle()
-#' @param theme_fn Optional ggplot2 theme function to apply (default theme_minimal)
 #'
 #' @return A list of ggplot2 objects
 #'
@@ -19,7 +18,7 @@
 #' }
 #'
 #' @export
-plot_vb_diagnostics <- function(model, theme_fn = ggplot2::theme_minimal()) {
+plot_vb_diagnostics <- function(model) {
   if (!inherits(model, "vb_mle")) {
     stop("This function only works with models from fit_vb_mle()")
   }
@@ -30,53 +29,49 @@ plot_vb_diagnostics <- function(model, theme_fn = ggplot2::theme_minimal()) {
   # Function to create diagnostic plots for a specific model/sex
   create_diagnostic_plots <- function(data, model_obj, sex_label = NULL) {
     # Prepare plot title suffix
-    title_suffix <- if (is.null(sex_label)) "" else paste(" -", sex_label)
+    title_suffix <- if (is.null(sex_label)) "" else paste0("(", sex_label, ")")
 
     # Residuals vs Fitted
     p1 <- ggplot2::ggplot(data, ggplot2::aes(x = fitted, y = residual)) +
-      ggplot2::geom_point() +
+      ggplot2::geom_point(colour = "royalblue", alpha = 0.8, size = 1.2) +
       ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-      ggplot2::geom_smooth(se = FALSE, color = "blue", method = "loess") +
+      ggplot2::geom_smooth(se = FALSE, colour = "black", method = "loess") +
       ggplot2::labs(
         x = "Fitted values",
         y = "Residuals",
         title = paste("Residuals vs Fitted", title_suffix)
-      ) +
-      theme_fn
+      )
 
     # Q-Q plot of residuals
     p2 <- ggplot2::ggplot(data, ggplot2::aes(sample = residual)) +
-      ggplot2::stat_qq() +
-      ggplot2::stat_qq_line() +
+      ggplot2::stat_qq(colour = "royalblue", alpha = 0.8, size = 1.2) +
+      ggplot2::stat_qq_line(colour = "black") +
       ggplot2::labs(
         x = "Theoretical Quantiles",
         y = "Sample Quantiles",
         title = paste("Normal Q-Q Plot", title_suffix)
-      ) +
-      theme_fn
+      )
 
     # Scale-Location Plot (sqrt of abs residuals vs. fitted)
     p3 <- ggplot2::ggplot(data, ggplot2::aes(x = fitted, y = sqrt(abs(student)))) +
-      ggplot2::geom_point() +
-      ggplot2::geom_smooth(se = FALSE, color = "blue", method = "loess") +
+      ggplot2::geom_point(colour = "royalblue", alpha = 0.8, size = 1.2) +
+      ggplot2::geom_smooth(se = FALSE, colour = "black", method = "loess") +
       ggplot2::labs(
         x = "Fitted values",
         y = "sqrt(|Standardized residuals|)",
         title = paste("Scale-Location Plot", title_suffix)
-      ) +
-      theme_fn
+      )
 
     # Residuals vs Age
     p4 <- ggplot2::ggplot(data, ggplot2::aes(x = age, y = residual)) +
-      ggplot2::geom_point() +
+      ggplot2::geom_point(colour = "royalblue", alpha = 0.8, size = 1.2) +
       ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-      ggplot2::geom_smooth(se = FALSE, color = "blue", method = "loess") +
+      ggplot2::geom_smooth(se = FALSE, colour = "black", method = "loess") +
       ggplot2::labs(
         x = "Age",
         y = "Residuals",
         title = paste("Residuals vs Age", title_suffix)
-      ) +
-      theme_fn
+      )
 
     return(list(
       residuals_vs_fitted = p1,
@@ -95,9 +90,16 @@ plot_vb_diagnostics <- function(model, theme_fn = ggplot2::theme_minimal()) {
 
       plots[[s]] <- create_diagnostic_plots(subset_data, subset_model, s)
     }
+
+    # Report that plots are organised by sex
+    message("Diagnostic plots are a list (with each element being a list of plots) organised by sex: ", paste(names(plots), collapse = ", "))
+    message("Available plots for each sex: 1=residuals_vs_fitted, 2=qq_plot, 3=scale_location, 4=residuals_vs_age")
   } else {
     # Single model
     plots <- create_diagnostic_plots(model$data, model$model)
+    # Report that plots are not specified by sex
+    message("Diagnostic plots are unsexed")
+    message("Available plots: 1=residuals_vs_fitted, 2=qq_plot, 3=scale_location, 4=residuals_vs_age")
   }
 
   return(plots)

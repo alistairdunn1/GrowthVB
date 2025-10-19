@@ -67,7 +67,7 @@ fit_vb_brms <- function(age, length, sex = NULL,
 
     # Start from defaults
     prior_list <- make_default_priors()
-    
+
 
     # Apply selective overrides if provided
     if (!is.null(prior_overrides)) {
@@ -126,7 +126,7 @@ fit_vb_brms <- function(age, length, sex = NULL,
       # Generate predictions for plotting
       age_seq <- sort(unique(subset_data$age))
       new_data <- data.frame(age = age_seq)
-  preds <- stats::predict(model, newdata = new_data, probs = c(0.025, 0.975))
+      preds <- stats::predict(model, newdata = new_data, probs = c(0.025, 0.975))
 
       preds_df <- cbind(as.data.frame(preds), new_data)
       preds_df$Sex <- s
@@ -149,7 +149,7 @@ fit_vb_brms <- function(age, length, sex = NULL,
     # Generate predictions for plotting
     age_seq <- sort(unique(data$age))
     new_data <- data.frame(age = age_seq)
-  preds <- stats::predict(model, newdata = new_data, probs = c(0.025, 0.975))
+    preds <- stats::predict(model, newdata = new_data, probs = c(0.025, 0.975))
 
     preds_df <- cbind(as.data.frame(preds), new_data)
     preds_df$Model <- "von Bertalanffy"

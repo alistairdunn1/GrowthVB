@@ -155,9 +155,9 @@ summarize_vb <- function(model, digits = 3) {
         temp <- data.frame(
           Sex = s,
           Parameter = c("Linf", "k", "t0", "tau"),
-          Estimate = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Estimate"],
-          Lower = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q2.5"],
-          Upper = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q97.5"]
+          Estimate = params[c("Linf_Intercept", "k_Intercept", "t0_Intercept", "tau_Intercept"), "Estimate"],
+          Lower = params[c("Linf_Intercept", "k_Intercept", "t0_Intercept", "tau_Intercept"), "Q2.5"],
+          Upper = params[c("Linf_Intercept", "k_Intercept", "t0_Intercept", "tau_Intercept"), "Q97.5"]
         )
         result <- rbind(result, temp)
       }
@@ -166,9 +166,9 @@ summarize_vb <- function(model, digits = 3) {
       params <- model$parameters
       result <- data.frame(
         Parameter = c("Linf", "k", "t0", "tau"),
-        Estimate = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Estimate"],
-        Lower = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q2.5"],
-        Upper = params[c("b_Linf_Intercept", "b_k_Intercept", "b_t0_Intercept", "b_tau_Intercept"), "Q97.5"]
+        Estimate = params[c("Linf_Intercept", "k_Intercept", "t0_Intercept", "tau_Intercept"), "Estimate"],
+        Lower = params[c("Linf_Intercept", "k_Intercept", "t0_Intercept", "tau_Intercept"), "Q2.5"],
+        Upper = params[c("Linf_Intercept", "k_Intercept", "t0_Intercept", "tau_Intercept"), "Q97.5"]
       )
     }
 

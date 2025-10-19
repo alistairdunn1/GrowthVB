@@ -67,6 +67,7 @@ fit_vb_brms <- function(age, length, sex = NULL,
 
     # Start from defaults
     prior_list <- make_default_priors()
+    
 
     # Apply selective overrides if provided
     if (!is.null(prior_overrides)) {

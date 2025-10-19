@@ -5,6 +5,7 @@
 *[Brief overview of the analysis, key findings, and conclusions in 3-5 sentences]*
 
 **Key Results:**
+
 - Asymptotic length (L∞): [value] ± [error] [units]
 - Growth coefficient (k): [value] ± [error] [year⁻¹]
 - Age at zero length (t₀): [value] ± [error] [years]
@@ -13,9 +14,11 @@
 ## 2. Introduction
 
 ### 2.1 Study Background
+
 *[Provide context for why this analysis was conducted]*
 
 ### 2.2 Objectives
+
 *[List specific objectives of the growth analysis]*
 
 - To estimate growth parameters for [species name]
@@ -24,6 +27,7 @@
 - *[Other objectives]*
 
 ### 2.3 Species Biology
+
 *[Brief description of the species and relevant biological information]*
 
 ## 3. Materials and Methods
@@ -37,6 +41,7 @@
 **Sampling methods:** *[Brief description of how samples were collected]*
 
 **Sample size:**
+
 - Total: [n] individuals
 - Males: [n] individuals
 - Females: [n] individuals
@@ -47,11 +52,13 @@
 ### 3.2 Age and Length Determination
 
 **Length measurements:**
+
 - Type: [total length/fork length/standard length]
 - Precision: [value] [units]
 - Method: [measuring board/calipers/etc.]
 
 **Age determination:**
+
 - Structure used: [otoliths/scales/spines/vertebrae]
 - Preparation method: *[Brief description]*
 - Reading method: *[Brief description]*
@@ -60,23 +67,28 @@
 ### 3.3 Statistical Analysis
 
 **Software used:**
+
 - R version [x.x.x]
 - growthVB package version [x.x.x]
 - *[Other relevant software]*
 
 **Growth models applied:**
+
 - Von Bertalanffy growth function (VBGF)
 - *[Any modified models or alternative models]*
 
 **Estimation methods:**
+
 - Maximum likelihood estimation (MLE) with heteroscedasticity
 - Bayesian estimation using BRMS
 - *[Other methods if applicable]*
 
 **Model assumptions:**
+
 - *[List any assumptions made in the analysis]*
 
 **Model selection criteria:**
+
 - AIC/BIC/WAIC
 - Likelihood ratio tests
 - *[Other criteria used]*
@@ -126,18 +138,18 @@ plot_vb_age_counts(age = age_data, year = year_data)
 
 | Parameter | Estimate | Standard Error | 95% CI Lower | 95% CI Upper |
 | --------- | -------- | -------------- | ------------ | ------------ |
-| L∞        | [value]  | [value]        | [value]      | [value]      |
+| L∞       | [value]  | [value]        | [value]      | [value]      |
 | k         | [value]  | [value]        | [value]      | [value]      |
-| t₀        | [value]  | [value]        | [value]      | [value]      |
+| t₀       | [value]  | [value]        | [value]      | [value]      |
 | CV        | [value]  | [value]        | [value]      | [value]      |
 
 **Bayesian estimates:**
 
 | Parameter | Posterior Mean | Posterior SD | 95% CI Lower | 95% CI Upper |
 | --------- | -------------- | ------------ | ------------ | ------------ |
-| L∞        | [value]        | [value]      | [value]      | [value]      |
+| L∞       | [value]        | [value]      | [value]      | [value]      |
 | k         | [value]        | [value]      | [value]      | [value]      |
-| t₀        | [value]        | [value]      | [value]      | [value]      |
+| t₀       | [value]        | [value]      | [value]      | [value]      |
 | CV        | [value]        | [value]      | [value]      | [value]      |
 
 *[Insert von Bertalanffy growth curve plot showing fitted curve and observed data points]*
@@ -148,18 +160,18 @@ plot_vb_age_counts(age = age_data, year = year_data)
 
 | Parameter | Estimate | Standard Error | 95% CI Lower | 95% CI Upper |
 | --------- | -------- | -------------- | ------------ | ------------ |
-| L∞        | [value]  | [value]        | [value]      | [value]      |
+| L∞       | [value]  | [value]        | [value]      | [value]      |
 | k         | [value]  | [value]        | [value]      | [value]      |
-| t₀        | [value]  | [value]        | [value]      | [value]      |
+| t₀       | [value]  | [value]        | [value]      | [value]      |
 | CV        | [value]  | [value]        | [value]      | [value]      |
 
 **Female growth parameters:**
 
 | Parameter | Estimate | Standard Error | 95% CI Lower | 95% CI Upper |
 | --------- | -------- | -------------- | ------------ | ------------ |
-| L∞        | [value]  | [value]        | [value]      | [value]      |
+| L∞       | [value]  | [value]        | [value]      | [value]      |
 | k         | [value]  | [value]        | [value]      | [value]      |
-| t₀        | [value]  | [value]        | [value]      | [value]      |
+| t₀       | [value]  | [value]        | [value]      | [value]      |
 | CV        | [value]  | [value]        | [value]      | [value]      |
 
 *[Insert sex-specific growth curve plot with different colors/symbols for each sex]*
@@ -174,7 +186,7 @@ plot_vb_age_counts(age = age_data, year = year_data)
 
 #### 4.3.2 Model Comparison
 
-| Model     | Parameters | Log-likelihood | AIC     | BIC     | ΔAIC    |
+| Model     | Parameters | Log-likelihood | AIC     | BIC     | ΔAIC   |
 | --------- | ---------- | -------------- | ------- | ------- | ------- |
 | [Model 1] | [n]        | [value]        | [value] | [value] | [value] |
 | [Model 2] | [n]        | [value]        | [value] | [value] | [value] |
@@ -194,7 +206,7 @@ plot_vb_age_counts(age = age_data, year = year_data)
 
 ### 5.2 Comparison with Previous Studies
 
-| Study           | Region     | Year   | L∞      | k       | t₀      | Method   |
+| Study           | Region     | Year   | L∞     | k       | t₀     | Method   |
 | --------------- | ---------- | ------ | ------- | ------- | ------- | -------- |
 | Current study   | [location] | [year] | [value] | [value] | [value] | [method] |
 | [Author et al.] | [location] | [year] | [value] | [value] | [value] | [method] |

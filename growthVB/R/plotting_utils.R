@@ -213,7 +213,7 @@ plot_empirical_cv <- function(age, length, sex = NULL, min_n = 3, add_smoother =
     # Add smoother if requested
     if (add_smoother) {
       p <- p + ggplot2::geom_smooth(
-        method = "loess", se = TRUE, colour = "red", linewidth = 1.2, alpha = 0.7
+        method = "loess", se = TRUE, colour = "red", linewidth = 1, alpha = 0.7
       )
     }
   } else {

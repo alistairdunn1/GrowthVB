@@ -12,7 +12,7 @@ if errorlevel 1 (
 
 rem Generate documentation with roxygen2
 echo Generating documentation...
-rm -rf growth.Rcheck
+rm -rf growthVB.Rcheck
 call R --vanilla < run-roxygen.R
 if errorlevel 1 exit /b 1
 

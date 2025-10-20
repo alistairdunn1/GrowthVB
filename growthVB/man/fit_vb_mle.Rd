@@ -28,20 +28,31 @@ fit_vb_mle(
 
 \item{ci_level}{Confidence interval level (default 0.95)}
 
-\item{optim_method}{Optimization method for stats::optim (default "L-BFGS-B")}
+\item{optim_method}{Optimisation method for stats::optim (default "L-BFGS-B")}
 
-\item{maxit}{Maximum number of iterations for optimization (default 1000)}
+\item{maxit}{Maximum number of iterations for optimisation (default 1000)}
 }
 \value{
 A list containing:
 \item{parameters}{Estimated parameters with confidence intervals}
 \item{data}{Original data with fitted values and residuals}
 \item{fits}{Model fit predictions for plotting}
-\item{model}{The fitted model object with optimization results}
+\item{model}{The fitted model object with optimisation results, including:
+\itemize{
+\item Log-likelihood of the fitted model (logLik)
+\item Akaike Information Criterion (AIC)
+\item Bayesian Information Criterion (BIC)
+\item Residual standard error (sigma)
+\item Number of observations (n_obs)
+\item Number of parameters (n_params)
+\item Model predictions (fitted_values)
+\item Model residuals (residuals)
+}
+}
 }
 \description{
 This function fits a von Bertalanffy growth function to age and length data using
-maximum likelihood estimation. The CV of the length is explicitly modeled as a function
+maximum likelihood estimation. The CV of the length is explicitly modelled as a function
 of the mean length, allowing for heteroscedasticity where variance increases with fish size.
 }
 \examples{

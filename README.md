@@ -1,6 +1,6 @@
 # growthVB: Von Bertalanffy Growth Curve Estimation for R
 
-`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides both maximum likelihood estimation (MLE) and Bayesian (brms) approaches to fitting, visualisation tools for diagnostics, and methods for summarising parameter estimates.
+`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides maximum likelihood estimation (MLE), Bayesian (brms), and spatial modelling approaches, with visualisation tools for diagnostics and methods for summarising parameter estimates.
 
 ## Installation
 
@@ -20,17 +20,12 @@ devtools::install_github("alistairdunn1/growthVB", subdir = "growthVB")
 
 ## Features
 
-- Fit von Bertalanffy growth curves using maximum likelihood estimation (MLE)
-- Optionally fit Bayesian von Bertalanffy curves using brms
-- Explicitly model heteroscedasticity with CV as a function of predicted length
-- Sex-specific growth modelling with separate parameters by sex
-- Length bin sampling corrections
-- Parameter estimation with 95% confidence/credible intervals
-- Predictions with confidence and prediction intervals
-- Visualise growth curves and underlying data
-- Produce diagnostic plots including empirical CV analysis
-- Generate age-length heatmaps with optional smoothers and age frequency summaries
-- Posterior predictive checks for Bayesian models
+- **Standard von Bertalanffy models**: Fit growth curves using maximum likelihood estimation (MLE) or Bayesian methods (brms)
+- **Heteroscedasticity modelling**: Explicitly model CV as a function of predicted length
+- **Sex-specific growth modelling**: Separate parameters by sex with proper statistical treatment
+- **Length bin sampling corrections**: Account for stratified sampling designs
+- **Parameter estimation**: 95% confidence/credible intervals for all parameters
+- **Diagnostics**: Residual analysis, posterior predictive checks, empirical CV analysis
 
 ## Core Functions
 
@@ -89,11 +84,13 @@ fit_vb_brms(
 - **Prior specification**: Flexible prior definition for all parameters
 - **MCMC control**: Fine-grained control of sampling behaviour
 
-### Analysis
+#### Analysis
 
 - `summarise_vb()`: Summarise parameter estimates with confidence/credible intervals
 
 ### Visualisation
+
+#### Standard Plotting
 
 - `plot_vb()`: Plot growth curves with data points
 - `plot_vb_mle_diagnostics()`: Produce standard regression diagnostics plots for MLE models
@@ -341,13 +338,7 @@ if (requireNamespace("brms", quietly = TRUE)) {
 }
 ```
 
-For a complete example, see the example script in the package:
-
-```r
-file.path(system.file(package = "growthVB"), "examples", "example_usage.R")
-```
-
-## Citation
+### Citation
 
 To cite growthVB in publications, please use:
 
@@ -357,7 +348,7 @@ citation("growthVB")
 
 This will provide the appropriate citation format. For manual citation:
 
-> Dunn, A. (2025). growthVB: Von Bertalanffy Growth Curve Estimation with Heteroscedastic Errors. R package version 0.2.0. <https://github.com/alistairdunn1/growthVB>
+> Dunn, A. (2025). growthVB: Von Bertalanffy Growth Curve Estimation with Heteroscedastic Errors. R package version 0.2.0. [https://github.com/alistairdunn1/growthVB](https://github.com/alistairdunn1/growthVB)
 
 When using specific functionality, please also cite:
 

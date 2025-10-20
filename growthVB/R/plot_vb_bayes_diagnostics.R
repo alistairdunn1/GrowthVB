@@ -183,7 +183,7 @@ plot_vb_bayes_diagnostics <- function(model,
           residual_long <- rbind(residual_long, temp_df)
         }
 
-        # Calculate bin centers for x-axis positioning
+        # Calculate bin centres for x-axis positioning
         bin_centers <- aggregate(fitted_mean ~ fitted_bin, residual_long, mean, na.rm = TRUE)
         residual_long$fitted_center <- bin_centers$fitted_mean[match(residual_long$fitted_bin, bin_centers$fitted_bin)]
 
@@ -319,7 +319,7 @@ plot_vb_bayes_diagnostics <- function(model,
               age_residual_long <- rbind(age_residual_long, temp_df)
             }
 
-            # Calculate bin centers for x-axis positioning
+            # Calculate bin centres for x-axis positioning
             age_bin_centers <- aggregate(age ~ age_bin, age_residual_long, mean, na.rm = TRUE)
             age_residual_long$age_center <- age_bin_centers$age[match(age_residual_long$age_bin, age_bin_centers$age_bin)]
 

@@ -1,0 +1,153 @@
+* using log directory 'C:/Users/alist/OneDrive/Projects/Software/GrowthVB/growthVB/..Rcheck'
+* using R version 4.4.1 (2024-06-14 ucrt)
+* using platform: x86_64-w64-mingw32
+* R was compiled by
+    gcc.exe (GCC) 13.2.0
+    GNU Fortran (GCC) 13.2.0
+* running under: Windows 11 x64 (build 26200)
+* using session charset: UTF-8
+* using options '--no-manual --no-build-vignettes'
+* checking for file './DESCRIPTION' ... OK
+* this is package 'growthVB' version '0.2.0'
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... NOTE
+Found the following hidden files and directories:
+  ..Rcheck
+These were most likely included in error. See section 'Package structure'
+in the 'Writing R Extensions' manual.
+* checking for portable file names ... OK
+* checking whether package 'growthVB' can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... NOTE
+Checking should be performed on sources prepared by 'R CMD build'.
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... WARNING
+Found the following directory with the name of a check directory:
+  ./..Rcheck
+Most likely, these were included erroneously.
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking loading without being on the library search path ... OK
+* checking dependencies in R code ... WARNING
+'::' or ':::' import not declared from: 'tidyr'
+'library' or 'require' call not declared from: 'ggplot2'
+'library' or 'require' call to 'ggplot2' in package code.
+  Please use :: or requireNamespace() instead.
+  See section 'Suggested packages' in the 'Writing R Extensions' manual.
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+fit_vb_mle : fit_model: no visible global function definition for 'lm'
+fit_vb_mle : fit_model: no visible global function definition for
+  'coef'
+plot_age_length_heatmap: no visible binding for global variable
+  'age_midpoint'
+plot_age_length_heatmap: no visible binding for global variable
+  'length_midpoint'
+plot_empirical_cv: no visible binding for global variable 'cv'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible global
+  function definition for 'aggregate'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'fitted_bin'
+plot_vb_bayes_diagnostics : create_diagnostics : <anonymous>: no
+  visible global function definition for 'quantile'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'fitted_center'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'q05'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'q95'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'q25'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'q75'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'median'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible global
+  function definition for 'everything'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'residual_lower'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'residual_upper'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible global
+  function definition for 'posterior_predict'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'lower'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'upper'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'fit'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'quantile'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'q10'
+plot_vb_bayes_diagnostics : create_diagnostics: no visible binding for
+  global variable 'q90'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible global
+  function definition for 'posterior_predict'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible global
+  function definition for 'quantile'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'age_group'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'mean_length'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'type'
+plot_vb_growth_pp_checks : create_growth_pp_checks : <anonymous>: no
+  visible global function definition for 'sd'
+plot_vb_growth_pp_checks : create_growth_pp_checks : <anonymous> :
+  <anonymous>: no visible global function definition for 'sd'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'cv'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'median'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'theoretical'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'observed'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'lower'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'upper'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'in_interval'
+plot_vb_growth_pp_checks : create_growth_pp_checks: no visible binding
+  for global variable 'lag1_residual'
+print_single_model: no visible global function definition for 'symnum'
+summary_single_model: no visible global function definition for
+  'symnum'
+Undefined global functions or variables:
+  age_group age_midpoint aggregate coef cv everything fit fitted_bin
+  fitted_center in_interval lag1_residual length_midpoint lm lower
+  mean_length median observed posterior_predict q05 q10 q25 q75 q90 q95
+  quantile residual_lower residual_upper sd symnum theoretical type
+  upper
+Consider adding
+  importFrom("stats", "aggregate", "coef", "lm", "median", "quantile",
+             "sd", "symnum")
+to your NAMESPACE file.
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... OK
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... OK
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking examples ... OK
+* DONE
+Status: 2 WARNINGs, 3 NOTEs

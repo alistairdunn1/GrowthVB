@@ -1,5 +1,6 @@
 Package: growthVB
-Title: Von Bertalanffy Growth Curve Estimation with Heteroscedastic Errors
+Title: Von Bertalanffy Growth Curve Estimation with Heteroscedastic
+        Errors
 Version: 0.2.0
 Date: 2025-10-07
 Author: Alistair Dunn
@@ -16,14 +17,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Imports: 
-    ggplot2,
-    stats,
-    brms
-Suggests:
-    loo,
-    bayesplot,
-    GGally,
-    rstan,
-    testthat (>= 3.0.0)
+Imports: ggplot2, stats, brms
+Suggests: loo, bayesplot, GGally, rstan, testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Built: R 4.4.1; ; 2025-10-20 03:52:41 UTC; windows

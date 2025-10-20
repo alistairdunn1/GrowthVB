@@ -1,0 +1,378 @@
+
+R version 4.4.1 (2024-06-14 ucrt) -- "Race for Your Life"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "growthVB"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> options(pager = "console")
+> library('growthVB')
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("fit_vb_brms")
+> ### * fit_vb_brms
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: fit_vb_brms
+> ### Title: Fit von Bertalanffy Growth Function using Bayesian Methods
+> ###   (brms)
+> ### Aliases: fit_vb_brms
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D fit <- fit_vb_brms(age = age, length = length)
+> ##D 
+> ##D # Sex-specific models run in parallel
+> ##D sex <- rep(c("M", "F"), length.out = 15)
+> ##D fit_sex <- fit_vb_brms(age = age, length = length, sex = sex, parallel_sex = TRUE)
+> ##D 
+> ##D # Example with selective prior overrides (modify specific parameters)
+> ##D # Override only Linf and k priors, keep default t0 and CV priors
+> ##D fit_override <- fit_vb_brms(
+> ##D   age = age, length = length,
+> ##D   prior_overrides = list(
+> ##D     Linf = "normal(120, 20)", # More informative prior for Linf
+> ##D     k = "gamma(2, 10)" # Gamma prior for k (ensures positive)
+> ##D   )
+> ##D )
+> ##D 
+> ##D # Example with completely custom priors (replaces all defaults)
+> ##D library(brms)
+> ##D custom_priors <- c(
+> ##D   prior_string("normal(110, 15)", nlpar = "Linf", lb = 0),
+> ##D   prior_string("gamma(3, 15)", nlpar = "k", lb = 0),
+> ##D   prior_string("normal(-0.5, 0.5)", nlpar = "t0"),
+> ##D   prior_string("gamma(2, 20)", nlpar = "CV", lb = 0)
+> ##D )
+> ##D fit_custom <- fit_vb_brms(
+> ##D   age = age, length = length,
+> ##D   priors = custom_priors
+> ##D )
+> ##D 
+> ##D # Example combining sex-specific models with custom priors
+> ##D fit_sex_custom <- fit_vb_brms(
+> ##D   age = age, length = length, sex = sex,
+> ##D   prior_overrides = list(
+> ##D     Linf = "normal(130, 25)", # Expect larger maximum length
+> ##D     CV = "gamma(1.5, 15)" # More constrained CV
+> ##D   ),
+> ##D   parallel_sex = TRUE
+> ##D )
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("fit_vb_mle")
+> ### * fit_vb_mle
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: fit_vb_mle
+> ### Title: Fit von Bertalanffy Growth Function using Maximum Likelihood
+> ###   Estimation
+> ### Aliases: fit_vb_mle
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5 + 0.1 * (1:15))
+> ##D fit <- fit_vb_mle(age = age, length = length)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_age_length_heatmap")
+> ### * plot_age_length_heatmap
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_age_length_heatmap
+> ### Title: Plot Age-Length Heatmap
+> ### Aliases: plot_age_length_heatmap
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D plot_age_length_heatmap(age = age, length = length)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_empirical_cv")
+> ### * plot_empirical_cv
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_empirical_cv
+> ### Title: Plot Empirical Coefficient of Variation by Age
+> ### Aliases: plot_empirical_cv
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- rep(1:15, each = 10)
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) +
+> ##D   rnorm(length(age), 0, 5 + 0.1 * age) # CV increases with age
+> ##D plot_empirical_cv(age = age, length = length)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_vb")
+> ### * plot_vb
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_vb
+> ### Title: Plot von Bertalanffy Growth Curve
+> ### Aliases: plot_vb
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D fit <- fit_vb_mle(age = age, length = length)
+> ##D plot_vb(fit)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_vb_age_counts")
+> ### * plot_vb_age_counts
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_vb_age_counts
+> ### Title: Plot frequency distribution of age samples
+> ### Aliases: plot_vb_age_counts
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D groups <- sample(c("A", "B", "C"), 15, replace = TRUE)
+> ##D plot_vb_age_counts(age = age, group = groups)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_vb_bayes_diagnostics")
+> ### * plot_vb_bayes_diagnostics
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_vb_bayes_diagnostics
+> ### Title: Comprehensive Bayesian Diagnostics for von Bertalanffy Models
+> ### Aliases: plot_vb_bayes_diagnostics
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D fit <- fit_vb_brms(age = age, length = length)
+> ##D 
+> ##D # Full diagnostics
+> ##D diagnostics <- plot_vb_bayes_diagnostics(fit)
+> ##D 
+> ##D # Specific diagnostic types
+> ##D convergence <- plot_vb_bayes_diagnostics(fit, diagnostic_types = "convergence")
+> ##D pp_checks <- plot_vb_bayes_diagnostics(fit, diagnostic_types = "pp_checks")
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_vb_growth_pp_checks")
+> ### * plot_vb_growth_pp_checks
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_vb_growth_pp_checks
+> ### Title: Growth-Specific Posterior Predictive Checks
+> ### Aliases: plot_vb_growth_pp_checks
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Growth model with posterior predictive checks
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D fit <- fit_vb_brms(age = age, length = length)
+> ##D 
+> ##D # Growth-specific checks
+> ##D growth_checks <- plot_vb_growth_pp_checks(fit)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_vb_mle_diagnostics")
+> ### * plot_vb_mle_diagnostics
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_vb_mle_diagnostics
+> ### Title: Plot von Bertalanffy Growth Model Diagnostics
+> ### Aliases: plot_vb_mle_diagnostics
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D fit <- fit_vb_mle(age = age, length = length)
+> ##D diagnostics <- plot_vb_mle_diagnostics(fit)
+> ##D diagnostics$residuals_vs_fitted
+> ## End(Not run)
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D fit <- fit_vb_mle(age = age, length = length)
+> ##D diagnostics <- plot_vb_mle_diagnostics(fit)
+> ##D diagnostics$residuals_vs_fitted
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_vb_posteriors")
+> ### * plot_vb_posteriors
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_vb_posteriors
+> ### Title: Plot Posterior Predictive Checks for von Bertalanffy Bayesian
+> ###   Models
+> ### Aliases: plot_vb_posteriors
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D fit <- fit_vb_brms(age = age, length = length)
+> ##D plots <- plot_vb_posteriors(fit)
+> ##D plots$posterior_predictive
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("plot_vb_predictions")
+> ### * plot_vb_predictions
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: plot_vb_predictions
+> ### Title: Plot von Bertalanffy Growth Model Predictions
+> ### Aliases: plot_vb_predictions
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Fit model and make predictions
+> ##D fit <- fit_vb_mle(age = age, length = length, sex = sex)
+> ##D new_ages <- data.frame(
+> ##D   age = rep(seq(0, 50, by = 1), each = 2),
+> ##D   sex = rep(c("M", "F"), times = 51)
+> ##D )
+> ##D predictions <- predict(fit, newdata = new_ages, interval = "prediction")
+> ##D 
+> ##D # Create plot
+> ##D plot_vb_predictions(predictions, original_data = fit$data)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("summarise_vb")
+> ### * summarise_vb
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: summarise_vb
+> ### Title: Summarise von Bertalanffy Growth Model Results
+> ### Aliases: summarise_vb
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D # Simple example with simulated data
+> ##D age <- 1:15
+> ##D length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
+> ##D fit <- fit_vb_mle(age = age, length = length)
+> ##D summarise_vb(fit)
+> ## End(Not run)
+> 
+> 
+> 
+> 
+> ### * <FOOTER>
+> ###
+> cleanEx()
+> options(digits = 7L)
+> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+Time elapsed:  0.95 0.05 1.01 NA NA 
+> grDevices::dev.off()
+null device 
+          1 
+> ###
+> ### Local variables: ***
+> ### mode: outline-minor ***
+> ### outline-regexp: "\\(> \\)?### [*]+" ***
+> ### End: ***
+> quit('no')

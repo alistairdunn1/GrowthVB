@@ -86,7 +86,7 @@
 ### 4.1 Data Overview
 
 ```
-[Insert table summarizing sample characteristics]
+[Insert table summarising sample characteristics]
 ```
 
 #### 4.1.1 Age Distribution

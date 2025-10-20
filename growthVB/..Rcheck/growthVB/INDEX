@@ -1,0 +1,23 @@
+fit_vb_brms             Fit von Bertalanffy Growth Function using
+                        Bayesian Methods (brms)
+fit_vb_mle              Fit von Bertalanffy Growth Function using
+                        Maximum Likelihood Estimation
+plot_age_length_heatmap
+                        Plot Age-Length Heatmap
+plot_empirical_cv       Plot Empirical Coefficient of Variation by Age
+plot_vb                 Plot von Bertalanffy Growth Curve
+plot_vb_age_counts      Plot frequency distribution of age samples
+plot_vb_bayes_diagnostics
+                        Comprehensive Bayesian Diagnostics for von
+                        Bertalanffy Models
+plot_vb_growth_pp_checks
+                        Growth-Specific Posterior Predictive Checks
+plot_vb_mle_diagnostics
+                        Plot von Bertalanffy Growth Model Diagnostics
+plot_vb_posteriors      Plot Posterior Predictive Checks for von
+                        Bertalanffy Bayesian Models
+plot_vb_predictions     Plot von Bertalanffy Growth Model Predictions
+predict.vb_mle          Predict method for vb_mle objects
+print.vb_mle            Print method for vb_mle objects
+summarise_vb            Summarise von Bertalanffy Growth Model Results
+summary.vb_mle          Summary method for vb_mle objects

@@ -71,9 +71,30 @@ print_single_model <- function(model, digits) {
     cat("Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n")
   }
 
-  # Print convergence info
+  # Print convergence info and model diagnostics
+  cat("\nModel Fit:\n")
+  if (!is.null(model$n_obs)) {
+    cat("  Observations:", model$n_obs, "\n")
+  }
+  if (!is.null(model$n_params)) {
+    cat("  Parameters:", model$n_params, "\n")
+  }
+  if (!is.null(model$sigma)) {
+    cat("  Residual std error:", round(model$sigma, digits), "\n")
+  }
+  if (!is.null(model$logLik)) {
+    cat("  Log-likelihood:", round(model$logLik, digits), "\n")
+  } else {
+    cat("  Log-likelihood:", round(-model$value, digits), "\n")
+  }
+  if (!is.null(model$AIC)) {
+    cat("  AIC:", round(model$AIC, digits), "\n")
+  }
+  if (!is.null(model$BIC)) {
+    cat("  BIC:", round(model$BIC, digits), "\n")
+  }
+  
   cat("\nConvergence info:\n")
-  cat("  Log-likelihood:", -model$value, "\n")
   cat(
     "  Convergence code:", model$convergence,
     if (model$convergence == 0) "(successful)" else "(check convergence!)", "\n"

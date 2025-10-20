@@ -1,7 +1,7 @@
 #' Fit von Bertalanffy Growth Function using Maximum Likelihood Estimation
 #'
 #' This function fits a von Bertalanffy growth function to age and length data using
-#' maximum likelihood estimation. The CV of the length is explicitly modeled as a function
+#' maximum likelihood estimation. The CV of the length is explicitly modelled as a function
 #' of the mean length, allowing for heteroscedasticity where variance increases with fish size.
 #'
 #' @param age A numeric vector of ages
@@ -10,14 +10,25 @@
 #' @param length_bins Optional numeric vector specifying length bins for analysis
 #' @param sampling_prob Optional vector of sampling probabilities (defaults to 1)
 #' @param ci_level Confidence interval level (default 0.95)
-#' @param optim_method Optimization method for stats::optim (default "L-BFGS-B")
-#' @param maxit Maximum number of iterations for optimization (default 1000)
+#' @param optim_method Optimisation method for stats::optim (default "L-BFGS-B")
+#' @param maxit Maximum number of iterations for optimisation (default 1000)
 #'
 #' @return A list containing:
 #'   \item{parameters}{Estimated parameters with confidence intervals}
 #'   \item{data}{Original data with fitted values and residuals}
 #'   \item{fits}{Model fit predictions for plotting}
-#'   \item{model}{The fitted model object with optimization results}
+#'   \item{model}{The fitted model object with optimisation results, including:
+#'     \itemize{
+#'       \item Log-likelihood of the fitted model (logLik)
+#'       \item Akaike Information Criterion (AIC)
+#'       \item Bayesian Information Criterion (BIC)
+#'       \item Residual standard error (sigma)
+#'       \item Number of observations (n_obs)
+#'       \item Number of parameters (n_params)
+#'       \item Model predictions (fitted_values)
+#'       \item Model residuals (residuals)
+#'     }
+#'   }
 #'
 #' @examples
 #' \dontrun{
@@ -116,16 +127,16 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
         neg_ll <- 1e10
       }
 
-      # Return negative log-likelihood (for minimization)
+      # Return negative log-likelihood (for minimisation)
       return(neg_ll)
     }
 
     # Initial parameter vector
     init_params <- c(Linf = Linf_init, k = k_init, t0 = t0_init, cv = cv_init)
 
-    # Try optimization with bounds to ensure reasonable parameter values
+    # Try optimisation with bounds to ensure reasonable parameter values
     if (optim_method %in% c("L-BFGS-B")) {
-      # Use bounded optimization
+      # Use bounded optimisation
       lower_bounds <- c(Linf = max(subset_data$length) * 0.5, k = 0.001, t0 = min(subset_data$age) - 5, cv = 0.01)
       upper_bounds <- c(Linf = max(subset_data$length) * 3, k = 3.0, t0 = max(subset_data$age) + 2, cv = 1.0)
 
@@ -142,7 +153,7 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
         silent = TRUE
       )
     } else {
-      # Use unbounded optimization
+      # Use unbounded optimisation
       optim_result <- try(
         stats::optim(
           par = init_params,
@@ -157,7 +168,7 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
 
     # If first attempt fails, try with Nelder-Mead method
     if (inherits(optim_result, "try-error") || optim_result$convergence != 0) {
-      warning("First optimization attempt failed. Trying with Nelder-Mead method.")
+      warning("First optimisation attempt failed. Trying with Nelder-Mead method.")
       optim_result <- try(
         stats::optim(
           par = init_params,
@@ -171,7 +182,7 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
 
       # If still failing, try with different starting values
       if (inherits(optim_result, "try-error") || optim_result$convergence != 0) {
-        warning("Second optimization attempt failed. Trying with different starting values.")
+        warning("Second optimisation attempt failed. Trying with different starting values.")
         init_params <- c(
           Linf = max(subset_data$length, na.rm = TRUE) * 1.5,
           k = 0.15,
@@ -191,12 +202,12 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
         )
 
         if (inherits(optim_result, "try-error") || optim_result$convergence != 0) {
-          stop("All optimization attempts failed. Try different starting values or check data quality.")
+          stop("All optimisation attempts failed. Try different starting values or check data quality.")
         }
       }
     }
 
-    # Create a model object with the optimization results and other useful information
+    # Create a model object with the optimisation results and other useful information
     model <- list(
       parameters = optim_result$par,
       convergence = optim_result$convergence,
@@ -207,6 +218,37 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
       data = subset_data,
       vb_mean = vb_mean
     )
+    
+    # Calculate model diagnostics
+    n_obs <- nrow(subset_data)
+    n_params <- length(optim_result$par)
+    
+    # Calculate log-likelihood (negative of the minimised objective)
+    logLik <- -optim_result$value
+    
+    # Calculate information criteria
+    AIC <- -2 * logLik + 2 * n_params
+    BIC <- -2 * logLik + log(n_obs) * n_params
+    
+    # Calculate fitted values and residuals for additional diagnostics
+    fitted_values <- vb_mean(subset_data$age, 
+                            optim_result$par["Linf"], 
+                            optim_result$par["k"], 
+                            optim_result$par["t0"])
+    residuals <- subset_data$length - fitted_values
+    
+    # Calculate residual standard error
+    sigma <- sqrt(sum(residuals^2) / (n_obs - n_params))
+    
+    # Add diagnostics to model object
+    model$logLik <- logLik
+    model$AIC <- AIC
+    model$BIC <- BIC
+    model$sigma <- sigma
+    model$n_obs <- n_obs
+    model$n_params <- n_params
+    model$fitted_values <- fitted_values
+    model$residuals <- residuals
 
     # Calculate parameter standard errors if hessian is available
     if (!is.null(model$hessian)) {
@@ -224,7 +266,7 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
         },
         error = function(e) {
           warning("Could not compute standard errors from Hessian matrix: ", e$message)
-          warning("This often indicates convergence issues or poorly conditioned optimization.")
+          warning("This often indicates convergence issues or poorly conditioned optimisation.")
           model$se <- rep(NA, length(model$parameters))
           model$vcov <- matrix(NA, nrow = length(model$parameters), ncol = length(model$parameters))
         }

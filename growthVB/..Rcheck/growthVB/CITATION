@@ -1,0 +1,32 @@
+citHeader("To cite growthVB in publications, please use:")
+
+meta <- utils::packageDescription("growthVB")
+
+# Main package citation
+bibentry(
+  bibtype = "Manual",
+  title = sprintf("%s: %s", meta$Package, meta$Title),
+  author = person("Alistair", "Dunn"),
+  year = if (!is.null(meta$Date)) substr(meta$Date, 1, 4) else format(Sys.Date(), "%Y"),
+  note = paste("R package version", meta$Version),
+  url = "https://github.com/alistairdunn1/growthVB",
+  textVersion = paste0(
+    "Dunn, A. (",
+    if (!is.null(meta$Date)) substr(meta$Date, 1, 4) else format(Sys.Date(), "%Y"),
+    "). growthVB: Von Bertalanffy Growth Curve Estimation with Heteroscedastic Errors. ",
+    "R package version ", meta$Version, ". ",
+    "https://github.com/alistairdunn1/growthVB"
+  )
+)
+
+citFooter(
+  "Please also cite the following when using specific functionality:\n",
+  "- For Bayesian functionality: cite 'brms' (Bürkner, 2017) and 'Stan' (Carpenter et al., 2017)\n",
+  "- For the von Bertalanffy growth equation: von Bertalanffy (1957)\n",
+  "- For heteroscedastic growth models: Kimura (2008)\n\n",
+  "References:\n",
+  "Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. Journal of Statistical Software, 80(1), 1-28.\n",
+  "Carpenter, B., et al. (2017). Stan: A probabilistic programming language. Journal of Statistical Software, 76(1).\n",
+  "Kimura, D. K. (2008). Extending the von Bertalanffy growth model using explanatory variables. Canadian Journal of Fisheries and Aquatic Sciences, 65(9), 1879-1891.\n",
+  "von Bertalanffy, L. (1957). Quantitative laws in metabolism and growth. Quarterly Review of Biology, 32(3), 217-231."
+)

@@ -61,6 +61,39 @@ fit <- fit_vb_brms(age = age, length = length)
 # Sex-specific models run in parallel
 sex <- rep(c("M", "F"), length.out = 15)
 fit_sex <- fit_vb_brms(age = age, length = length, sex = sex, parallel_sex = TRUE)
+
+# Example with selective prior overrides (modify specific parameters)
+# Override only Linf and k priors, keep default t0 and CV priors
+fit_override <- fit_vb_brms(
+  age = age, length = length,
+  prior_overrides = list(
+    Linf = "normal(120, 20)", # More informative prior for Linf
+    k = "gamma(2, 10)" # Gamma prior for k (ensures positive)
+  )
+)
+
+# Example with completely custom priors (replaces all defaults)
+library(brms)
+custom_priors <- c(
+  prior_string("normal(110, 15)", nlpar = "Linf", lb = 0),
+  prior_string("gamma(3, 15)", nlpar = "k", lb = 0),
+  prior_string("normal(-0.5, 0.5)", nlpar = "t0"),
+  prior_string("gamma(2, 20)", nlpar = "CV", lb = 0)
+)
+fit_custom <- fit_vb_brms(
+  age = age, length = length,
+  priors = custom_priors
+)
+
+# Example combining sex-specific models with custom priors
+fit_sex_custom <- fit_vb_brms(
+  age = age, length = length, sex = sex,
+  prior_overrides = list(
+    Linf = "normal(130, 25)", # Expect larger maximum length
+    CV = "gamma(1.5, 15)" # More constrained CV
+  ),
+  parallel_sex = TRUE
+)
 }
 
 }

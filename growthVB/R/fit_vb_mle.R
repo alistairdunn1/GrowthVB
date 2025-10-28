@@ -15,7 +15,7 @@
 #'
 #' @return A list containing:
 #'   \item{parameters}{Estimated parameters with confidence intervals}
-#'   \item{data}{Original data with fitted values and residuals}
+#'   \item{data}{Original data with fitted values and residuals, including ID column preserving input order}
 #'   \item{fits}{Model fit predictions for plotting}
 #'   \item{model}{The fitted model object with optimisation results, including:
 #'     \itemize{
@@ -42,16 +42,20 @@
 fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
                        sampling_prob = 1, ci_level = 0.95,
                        optim_method = "L-BFGS-B", maxit = 1000) {
-  # Create data frame for analysis
-  data <- data.frame(age = age, length = length)
+  # Create data frame for analysis with original order index
+  data <- data.frame(
+    ID = seq_along(age),  # Add unique identifier preserving original order
+    age = age, 
+    length = length
+  )
 
   # Add sex if provided
   if (!is.null(sex)) {
     data$sex <- sex
-    # Filter out any NA values
+    # Filter out any NA values but preserve ID column
     data <- data[!is.na(data$age) & !is.na(data$length) & !is.na(data$sex), ]
   } else {
-    # Filter out any NA values
+    # Filter out any NA values but preserve ID column
     data <- data[!is.na(data$age) & !is.na(data$length), ]
   }
 
@@ -403,7 +407,12 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
     )
 
     results$parameters <- param_matrix
-    results$data <- do.call(rbind, data_list)
+    
+    # Combine data preserving original order using ID
+    combined_data <- do.call(rbind, data_list)
+    # Reorder by ID to preserve input order
+    results$data <- combined_data[order(combined_data$ID), ]
+    
     results$fits <- do.call(rbind, fits_list)
     results$model <- models_list
     results$models <- models_list # Add models alias for backward compatibility

@@ -195,7 +195,61 @@ Posterior predictive checks include:
 2. **Quantile-quantile plots**: Comparing observed data quantiles to posterior predictive quantiles
 3. **Residual plots**: Examining systematic deviations between observed data and posterior predictions
 
-## 8. Implementation in the growthVB Package
+## 8. Model Output and Data Traceability
+
+### 8.1 ID Indexing System
+
+Both `fit_vb_mle()` and `fit_vb_brms()` implement an ID indexing system to preserve the original input data order:
+
+$$\text{ID}_i = i \quad \text{for} \quad i = 1, 2, \ldots, n$$
+
+Where $i$ is the original position in the input vectors. This ensures that results can be matched back to the original data, even when internal processing reorders observations (e.g., for sex-specific models).
+
+### 8.2 Residuals Calculation
+
+#### 8.2.1 MLE Residuals
+
+For the maximum likelihood approach, residuals are calculated as:
+
+$$r_i = L_i - \hat{L}_i$$
+
+Where:
+- $r_i$ is the residual for observation $i$
+- $L_i$ is the observed length
+- $\hat{L}_i = L_\infty \cdot (1 - e^{-k(t_i-t_0)})$ is the fitted length from the MLE model
+
+#### 8.2.2 Bayesian Residuals
+
+For the Bayesian approach, residuals are calculated using posterior mean fitted values:
+
+$$r_i = L_i - E[\hat{L}_i | \text{data}]$$
+
+Where $E[\hat{L}_i | \text{data}]$ is the posterior mean of the fitted length, obtained by:
+
+$$E[\hat{L}_i | \text{data}] = \int \hat{L}_i \cdot p(\theta | \text{data}) \, d\theta$$
+
+In practice, this is computed as the mean of posterior samples:
+
+$$E[\hat{L}_i | \text{data}] \approx \frac{1}{S} \sum_{s=1}^{S} L_\infty^{(s)} \cdot (1 - e^{-k^{(s)}(t_i-t_0^{(s)})})$$
+
+Where $S$ is the number of posterior samples and $\theta^{(s)} = (L_\infty^{(s)}, k^{(s)}, t_0^{(s)})$ represents the $s$-th posterior sample.
+
+### 8.3 Data Structure Preservation
+
+The enhanced data output maintains order through ID sorting:
+
+1. **Original order**: Data enters with ID = 1, 2, ..., n
+2. **Internal processing**: May reorder for computational efficiency (e.g., sex-specific models)
+3. **Result compilation**: Final data is sorted by ID to restore original order
+4. **Output verification**: $\text{ID}_i = i$ for all output observations
+
+This approach ensures that:
+- Original data relationships are preserved
+- Results can be matched to external datasets
+- Downstream analysis maintains data integrity
+- Traceability is maintained throughout the modeling process
+
+## 9. Implementation in the growthVB Package
 
 The `growthVB` package implements these methods with the following core functions:
 

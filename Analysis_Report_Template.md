@@ -73,6 +73,11 @@
 - Bayesian estimation using BRMS
 - *[Other methods if applicable]*
 
+**Data traceability:**
+- ID indexing preserves original input order for data matching
+- Fitted values and residuals calculated for all observations
+- Full result traceability maintained throughout analysis
+
 **Model assumptions:**
 - *[List any assumptions made in the analysis]*
 
@@ -140,6 +145,22 @@ plot_empirical_cv(age = age_data, length = length_data, sex = sex_data)
 ```
 
 ### 4.2 Growth Parameter Estimates
+
+**Data structure note:** Both `fit_vb_mle()` and `fit_vb_brms()` return enhanced data with:
+- `ID`: Unique identifier preserving original input order
+- `fitted`: Model-predicted length values  
+- `residual`: Residuals (observed - fitted values)
+
+```r
+# Access model data with fitted values and residuals
+head(fitted_model$data)
+
+# Check original order preservation
+all(fitted_model$data$ID == seq_along(original_data))
+
+# Summary of model residuals
+summary(fitted_model$data$residual)
+```
 
 #### 4.2.1 Combined Sex Analysis
 

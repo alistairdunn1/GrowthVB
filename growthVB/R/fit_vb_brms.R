@@ -21,6 +21,7 @@
 #'   \item{models}{The brms model object(s)}
 #'   \item{parameters}{Summary of parameter estimates}
 #'   \item{predictions}{Predictions for plotting}
+#'   \item{data}{Original data with fitted values and residuals, including ID column preserving input order}
 #'
 #' @examples
 #' \dontrun{
@@ -81,16 +82,20 @@ fit_vb_brms <- function(age, length, sex = NULL,
     )
   }
 
-  # Create data frame for analysis
-  data <- data.frame(age = age, length = length)
+  # Create data frame for analysis with original order index
+  data <- data.frame(
+    ID = seq_along(age),  # Add unique identifier preserving original order
+    age = age, 
+    length = length
+  )
 
   # Add sex if provided
   if (!is.null(sex)) {
     data$sex <- sex
-    # Filter out any NA values
+    # Filter out any NA values but preserve ID column
     data <- data[!is.na(data$age) & !is.na(data$length) & !is.na(data$sex), ]
   } else {
-    # Filter out any NA values
+    # Filter out any NA values but preserve ID column
     data <- data[!is.na(data$age) & !is.na(data$length), ]
   }
 
@@ -245,11 +250,21 @@ fit_vb_brms <- function(age, length, sex = NULL,
 
       models_list <- list()
       preds_list <- list()
+      data_list <- list()  # To store data with fitted values and residuals
 
       for (s in sex_levels) {
         subset_data <- data[data$sex == s, ]
         model <- fit_brms_model(subset_data)
         models_list[[s]] <- model
+
+        # Calculate fitted values and residuals for this sex
+        fitted_values <- fitted(model)[, "Estimate"]  # Extract fitted values
+        residuals <- subset_data$length - fitted_values
+        
+        # Add fitted values and residuals to subset data
+        subset_data$fitted <- fitted_values
+        subset_data$residual <- residuals
+        data_list[[s]] <- subset_data
 
         # Generate predictions for plotting
         age_seq <- sort(unique(subset_data$age))
@@ -267,10 +282,14 @@ fit_vb_brms <- function(age, length, sex = NULL,
     # Get parameter summaries
     params <- lapply(models_list, function(m) brms::fixef(m))
 
-    # Store results
+    # Combine data with fitted values and residuals, preserving order by ID
+    combined_data <- do.call(rbind, data_list)
+
+    # Store results with data ordered by ID
     results$models <- models_list
     results$parameters <- params
     results$predictions <- preds_list
+    results$data <- combined_data[order(combined_data$ID), ]  # Include data with fitted/residuals ordered by ID
   } else {
     # Fit a single model to all data
     message("Fitting single combined model")
@@ -284,10 +303,19 @@ fit_vb_brms <- function(age, length, sex = NULL,
     preds_df <- cbind(as.data.frame(preds), new_data)
     preds_df$Model <- "von Bertalanffy"
 
-    # Store results
+    # Calculate fitted values and residuals for the original data
+    fitted_values <- fitted(model)[, "Estimate"]  # Extract fitted values
+    residuals <- data$length - fitted_values
+    
+    # Add fitted values and residuals to data
+    data$fitted <- fitted_values
+    data$residual <- residuals
+
+    # Store results with data ordered by ID
     results$models <- model
     results$parameters <- brms::fixef(model)
     results$predictions <- preds_df
+    results$data <- data[order(data$ID), ]  # Include original data ordered by ID
   }
 
   class(results) <- c("vb_brms", "list")

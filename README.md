@@ -1,6 +1,6 @@
 # growthVB: Von Bertalanffy Growth Curve Estimation for R
 
-`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides maximum likelihood estimation (MLE), Bayesian (brms), and spatial modelling approaches, with visualisation tools for diagnostics and methods for summarising parameter estimates.
+`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides maximum likelihood estimation (MLE) and Bayesian (brms) approaches, with visualisation tools for diagnostics and methods for summarising parameter estimates.
 
 ## Installation
 
@@ -26,6 +26,8 @@ devtools::install_github("alistairdunn1/growthVB", subdir = "growthVB")
 - **Length bin sampling corrections**: Account for stratified sampling designs
 - **Parameter estimation**: 95% confidence/credible intervals for all parameters
 - **Diagnostics**: Residual analysis, posterior predictive checks, empirical CV analysis
+- **Data traceability**: ID indexing system preserves original data order and enables result tracking
+- **Automatic residuals**: Both MLE and Bayesian methods calculate fitted values and residuals
 
 ## Core Functions
 
@@ -88,6 +90,23 @@ fit_vb_brms(
 
 - `summarise_vb()`: Summarise parameter estimates with confidence/credible intervals
 
+### Model Output Structure
+
+Both `fit_vb_mle()` and `fit_vb_brms()` return list objects containing:
+
+- **`parameters`**: Parameter estimates with standard errors/credible intervals
+- **`data`**: Original data enhanced with analysis results, including:
+  - `ID`: Unique identifier preserving original input order (1, 2, 3, ...)
+  - `age`: Original age values
+  - `length`: Original length values  
+  - `sex`: Sex classification (if provided)
+  - `fitted`: Fitted/predicted length values from the von Bertalanffy model
+  - `residual`: Residuals calculated as observed - fitted values
+- **`model`**: The fitted model object (nls for MLE, brmsfit for Bayesian)
+- **`call`**: The function call that created the model
+
+The ID column ensures that results can be matched back to the original input data order, even when internal processing reorders observations (e.g., for sex-specific models). This enables full data traceability and facilitates downstream analysis of individual observations.
+
 ### Visualisation
 
 #### Standard Plotting
@@ -133,6 +152,16 @@ print(fit)
 
 # Summarise parameters
 summarise_vb(fit)
+
+# Access enhanced data with ID, fitted values, and residuals
+head(fit$data)
+# Columns: ID, age, length, fitted, residual
+
+# Check that original order is preserved by ID
+all(fit$data$ID == seq_along(age))  # Should be TRUE
+
+# Examine residuals
+summary(fit$data$residual)
 
 # Plot growth curve
 plot_vb(fit)
@@ -320,6 +349,13 @@ if (requireNamespace("brms", quietly = TRUE)) {
   
   # Basic posterior plots
   plot_vb_posteriors(fit_bayes)
+  
+  # Access Bayesian model data with fitted values and residuals
+  head(fit_bayes$data)
+  # Columns: ID, age, length, [sex], fitted, residual
+  
+  # Summary of Bayesian residuals (based on posterior mean fitted values)
+  summary(fit_bayes$data$residual)
   
   # Comprehensive Bayesian diagnostics
   full_diagnostics <- plot_vb_bayes_diagnostics(fit_bayes)

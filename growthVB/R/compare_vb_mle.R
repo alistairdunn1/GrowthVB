@@ -103,7 +103,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
   if (length(age) != length(length) || length(age) != length(group)) {
     stop("age, length, and group must have the same length")
   }
-  
+
   if (!is.null(sex) && length(sex) != length(age)) {
     stop("sex must have the same length as age, length, and group")
   }
@@ -133,32 +133,34 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     # Create sex/group combinations
     sex_group_combo <- interaction(sex, group, drop = TRUE)
     combo_counts <- table(sex_group_combo)
-    
+
     # Identify combinations with sufficient observations
     sufficient_combos <- names(combo_counts)[combo_counts >= min_obs]
-    
+
     if (length(sufficient_combos) == 0) {
       stop("No sex/group combinations have >= ", min_obs, " observations")
     }
-    
+
     # Filter to keep only sufficient combinations
     keep_indices <- sex_group_combo %in% sufficient_combos
-    
+
     if (sum(!keep_indices) > 0) {
       insufficient_combos <- names(combo_counts)[combo_counts < min_obs]
       if (verbose) {
-        cat("Removed", sum(!keep_indices), "observations from", length(insufficient_combos), 
-            "sex/group combinations with < ", min_obs, " observations:\n")
+        cat(
+          "Removed", sum(!keep_indices), "observations from", length(insufficient_combos),
+          "sex/group combinations with < ", min_obs, " observations:\n"
+        )
         for (combo in insufficient_combos) {
           cat("  ", combo, ": ", combo_counts[combo], " observations\n", sep = "")
         }
       }
-      
+
       age <- age[keep_indices]
       length <- length[keep_indices]
       group <- droplevels(group[keep_indices])
       sex <- droplevels(sex[keep_indices])
-      
+
       if (verbose) {
         cat("Remaining", length(age), "observations for analysis\n")
       }
@@ -167,27 +169,29 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     # For non-sex models, filter groups with insufficient observations
     group_counts <- table(group)
     sufficient_groups <- names(group_counts)[group_counts >= min_obs]
-    
+
     if (length(sufficient_groups) == 0) {
       stop("No groups have >= ", min_obs, " observations")
     }
-    
+
     keep_indices <- group %in% sufficient_groups
-    
+
     if (sum(!keep_indices) > 0) {
       insufficient_groups <- names(group_counts)[group_counts < min_obs]
       if (verbose) {
-        cat("Removed", sum(!keep_indices), "observations from", length(insufficient_groups), 
-            "groups with < ", min_obs, " observations:\n")
+        cat(
+          "Removed", sum(!keep_indices), "observations from", length(insufficient_groups),
+          "groups with < ", min_obs, " observations:\n"
+        )
         for (grp in insufficient_groups) {
           cat("  ", grp, ": ", group_counts[grp], " observations\n", sep = "")
         }
       }
-      
+
       age <- age[keep_indices]
       length <- length[keep_indices]
       group <- droplevels(group[keep_indices])
-      
+
       if (verbose) {
         cat("Remaining", length(age), "observations for analysis\n")
       }
@@ -233,7 +237,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
         Linf = params["Linf", "estimate"],
         k = params["k", "estimate"],
         t0 = params["t0", "estimate"],
-        CV = params["cv", "estimate"]  # Note: lowercase "cv" in row, uppercase "CV" in result
+        CV = params["cv", "estimate"] # Note: lowercase "cv" in row, uppercase "CV" in result
       )
       return(result)
     }
@@ -283,12 +287,12 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
   group_age_test <- age[group_mask]
   group_length_test <- length[group_mask]
   group_sex_test <- if (!is.null(sex)) sex[group_mask] else NULL
-  
+
   test_params <- fit_group_model(group_age_test, group_length_test, group_sex_test)
   if (is.null(test_params)) {
     stop("Failed to fit initial model to determine parameter structure")
   }
-  
+
   # Determine which parameters to test based on model type
   available_params <- names(test_params)
   if (!is.null(sex)) {
@@ -297,7 +301,12 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     sex_levels <- levels(sex)
     for (param in parameters) {
       for (sex_level in sex_levels) {
-        param_name <- paste0(param, "_", sex_level)
+        # Match the naming convention used in extract_parameters
+        if (param == "CV") {
+          param_name <- paste0("CV_", sex_level)
+        } else {
+          param_name <- paste0(toupper(substring(param, 1, 1)), substring(param, 2), "_", sex_level)
+        }
         if (param_name %in% available_params) {
           test_parameters <- c(test_parameters, param_name)
         }
@@ -307,11 +316,11 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     # For single models, use parameters as-is
     test_parameters <- intersect(parameters, available_params)
   }
-  
+
   if (length(test_parameters) == 0) {
     stop("No valid parameters found for testing")
   }
-  
+
   if (verbose) {
     cat("Testing parameters:", paste(test_parameters, collapse = ", "), "\n")
   }
@@ -320,13 +329,13 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
   group_params <- matrix(NA, nrow = length(group_levels), ncol = length(test_parameters))
   colnames(group_params) <- test_parameters
   rownames(group_params) <- group_levels
-  
+
   # Store starting values for each group (for bootstrap efficiency)
   group_start_values <- list()
-  
+
   # Store first group results
   group_params[1, ] <- test_params[test_parameters]
-  
+
   # Extract starting values from first group for bootstrap
   if (!is.null(sex)) {
     # For sex models, we'll use a combined approach - average the sex-specific parameters
@@ -357,7 +366,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
       params_i <- fit_group_model(group_age_i, group_length_i, group_sex_i)
       if (!is.null(params_i)) {
         group_params[i, ] <- params_i[test_parameters]
-        
+
         # Store starting values for bootstrap
         if (!is.null(sex)) {
           # For sex models, average the sex-specific parameters for starting values
@@ -402,10 +411,10 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     max_age <- max(age)
     age_breaks <- seq(from = min_age, to = max_age + age_bin_width, by = age_bin_width)
     age_bins <- cut(age, breaks = age_breaks, include.lowest = TRUE, right = FALSE)
-    
+
     # Calculate actual number of bins created
     n_bins_created <- length(levels(age_bins))
-    
+
     if (verbose) {
       cat("Age range:", round(min_age, 1), "to", round(max_age, 1), "\n")
       cat("Bin width:", age_bin_width, "years,", n_bins_created, "bins created\n")
@@ -424,7 +433,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     # Permute group labels (age-stratified or simple)
     if (age_stratified) {
       # Age-stratified permutation: permute within each age bin
-      perm_group <- group  # Start with original
+      perm_group <- group # Start with original
       for (bin_level in levels(age_bins)) {
         bin_indices <- which(age_bins == bin_level)
         if (length(bin_indices) > 1) {

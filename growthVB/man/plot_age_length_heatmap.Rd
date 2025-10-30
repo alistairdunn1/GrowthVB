@@ -8,6 +8,7 @@ plot_age_length_heatmap(
   age,
   length,
   sex = NULL,
+  group = NULL,
   bin_width_age = 1,
   bin_width_length = 5,
   add_smoother = TRUE
@@ -20,6 +21,8 @@ plot_age_length_heatmap(
 
 \item{sex}{An optional factor or character vector specifying the sex for each observation}
 
+\item{group}{An optional factor or character vector specifying a grouping variable (e.g., year, site, study)}
+
 \item{bin_width_age}{Width of age bins (default 1)}
 
 \item{bin_width_length}{Width of length bins (default 5)}
@@ -31,7 +34,9 @@ A ggplot2 object
 }
 \description{
 This function creates a heatmap of the age-length observations to visualise
-the distribution of samples.
+the distribution of samples. The heatmap uses a square-root transformation
+and light gray for low counts to improve visibility of sparse data. Empty bins
+(with zero observations) are not displayed on the plot.
 }
 \examples{
 \dontrun{
@@ -39,6 +44,15 @@ the distribution of samples.
 age <- 1:15
 length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
 plot_age_length_heatmap(age = age, length = length)
+
+# Example with grouping variable
+age <- rep(1:15, 2)
+length <- c(
+  100 * (1 - exp(-0.2 * (age[1:15] - (-0.5)))),
+  110 * (1 - exp(-0.18 * (age[16:30] - (-0.3))))
+) + rnorm(30, 0, 5)
+group <- rep(c("Study1", "Study2"), each = 15)
+plot_age_length_heatmap(age = age, length = length, group = group)
 }
 
 }

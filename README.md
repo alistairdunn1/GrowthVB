@@ -98,7 +98,7 @@ Both `fit_vb_mle()` and `fit_vb_brms()` return list objects containing:
 - **`data`**: Original data enhanced with analysis results, including:
   - `ID`: Unique identifier preserving original input order (1, 2, 3, ...)
   - `age`: Original age values
-  - `length`: Original length values  
+  - `length`: Original length values
   - `sex`: Sex classification (if provided)
   - `fitted`: Fitted/predicted length values from the von Bertalanffy model
   - `residual`: Residuals calculated as observed - fitted values
@@ -117,7 +117,7 @@ The ID column ensures that results can be matched back to the original input dat
 - `plot_vb_bayes_diagnostics()`: Comprehensive MCMC convergence and Bayesian model diagnostics
 - `plot_vb_growth_pp_checks()`: Growth-specific posterior predictive checks for Bayesian models
 - `plot_vb_predictions()`: Plot von Bertalanffy growth curves from prediction data with confidence/prediction intervals
-- `plot_age_length_heatmap()`: Create heatmap visualisations of age-length observations with optional smoothers
+- `plot_age_length_heatmap()`: Create heatmap visualisations of age-length observations with optional smoothers and grouping variables
 - `plot_vb_age_counts()`: Plot frequency distribution of age samples by group variables
 - `plot_empirical_cv()`: Plot empirical coefficient of variation by age for data exploration
 
@@ -171,6 +171,11 @@ diagnostics <- plot_vb_mle_diagnostics(fit)
 
 # Create age-length heatmap with smoother
 heatmap_plot <- plot_age_length_heatmap(age = age, length = length, add_smoother = TRUE)
+
+# Create heatmap with grouping variable (e.g., by year, study, site)
+# group_var <- sample(c("2020", "2021", "2022"), length(age), replace = TRUE)
+# heatmap_grouped <- plot_age_length_heatmap(age = age, length = length, 
+#                                           group = group_var, add_smoother = TRUE)
 
 # Plot empirical CV by age
 cv_plot <- plot_empirical_cv(age = age, length = length)
@@ -325,6 +330,54 @@ print(fit_binned$parameters)
 cat("Uncorrected model parameters:\n") 
 print(fit_uncorrected$parameters)
 ```
+
+### Statistical Comparisons
+
+### `compare_vb_mle()`
+
+Compare von Bertalanffy growth parameters between groups using bootstrap permutation testing. This function evaluates whether growth parameters differ significantly between two or more groups by comparing observed differences against a null distribution generated through random permutation of group labels.
+
+```r
+# Simulate data for two populations with different growth parameters
+set.seed(123)
+n_per_group <- 50
+age1 <- runif(n_per_group, 1, 15)
+age2 <- runif(n_per_group, 1, 15)
+
+# Population A: Linf=100, k=0.2
+length1 <- 100 * (1 - exp(-0.2 * (age1 - (-0.5)))) + rnorm(n_per_group, 0, 8)
+# Population B: Linf=120, k=0.15 (different parameters)  
+length2 <- 120 * (1 - exp(-0.15 * (age2 - (-0.5)))) + rnorm(n_per_group, 0, 10)
+
+age <- c(age1, age2)
+length <- c(length1, length2)
+population <- rep(c("Pop_A", "Pop_B"), each = n_per_group)
+
+# Perform bootstrap permutation test
+comparison <- compare_vb_mle(
+  age = age, 
+  length = length, 
+  group = population,
+  n_bootstrap = 500,
+  seed = 123
+)
+
+# View results
+print(comparison$p_values)
+print(comparison$significant)
+print(comparison$group_parameters)
+```
+
+The function returns:
+
+- **observed_diffs**: Observed differences between groups for each parameter
+- **p_values**: P-values for each parameter comparison
+- **significant**: Logical indicating which parameters show significant differences
+- **group_parameters**: Parameter estimates for each group
+- **null_distributions**: Bootstrap null distributions for visualization
+- **method_info**: Test settings and sample information
+
+Parameters can be selectively tested using the `parameters` argument (default tests all: "Linf", "k", "t0", "CV").
 
 ### Bayesian Model
 

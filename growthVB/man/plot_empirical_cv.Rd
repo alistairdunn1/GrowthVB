@@ -24,6 +24,7 @@ A ggplot2 object
 This function creates a plot showing the empirical coefficient of variation (CV)
 of length measurements by age. This is useful for understanding how variability
 in length changes with age and for validating CV models in von Bertalanffy fits.
+The smoother ribbon matches the line color with reduced transparency.
 }
 \examples{
 \dontrun{

@@ -35,7 +35,7 @@ fit_vb_mle(
 \value{
 A list containing:
 \item{parameters}{Estimated parameters with confidence intervals}
-\item{data}{Original data with fitted values and residuals}
+\item{data}{Original data with fitted values and residuals, including ID column preserving input order}
 \item{fits}{Model fit predictions for plotting}
 \item{model}{The fitted model object with optimisation results, including:
 \itemize{

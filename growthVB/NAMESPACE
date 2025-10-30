@@ -3,6 +3,7 @@
 S3method(predict,vb_mle)
 S3method(print,vb_mle)
 S3method(summary,vb_mle)
+export(compare_vb_mle)
 export(fit_vb_brms)
 export(fit_vb_mle)
 export(plot_age_length_heatmap)

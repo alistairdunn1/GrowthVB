@@ -45,6 +45,7 @@ A list containing:
 \item{models}{The brms model object(s)}
 \item{parameters}{Summary of parameter estimates}
 \item{predictions}{Predictions for plotting}
+\item{data}{Original data with fitted values and residuals, including ID column preserving input order}
 }
 \description{
 This function fits a von Bertalanffy growth function to age and length data using

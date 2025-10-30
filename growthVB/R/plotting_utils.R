@@ -1,11 +1,14 @@
 #' Plot Age-Length Heatmap
 #'
 #' This function creates a heatmap of the age-length observations to visualise
-#' the distribution of samples.
+#' the distribution of samples. The heatmap uses a square-root transformation
+#' and light gray for low counts to improve visibility of sparse data. Empty bins
+#' (with zero observations) are not displayed on the plot.
 #'
 #' @param age A numeric vector of ages
 #' @param length A numeric vector of lengths
 #' @param sex An optional factor or character vector specifying the sex for each observation
+#' @param group An optional factor or character vector specifying a grouping variable (e.g., year, site, study)
 #' @param bin_width_age Width of age bins (default 1)
 #' @param bin_width_length Width of length bins (default 5)
 #' @param add_smoother Logical, whether to add a smoother line showing the age-length relationship (default TRUE)
@@ -18,10 +21,19 @@
 #' age <- 1:15
 #' length <- 100 * (1 - exp(-0.2 * (age - (-0.5)))) + rnorm(15, 0, 5)
 #' plot_age_length_heatmap(age = age, length = length)
+#'
+#' # Example with grouping variable
+#' age <- rep(1:15, 2)
+#' length <- c(
+#'   100 * (1 - exp(-0.2 * (age[1:15] - (-0.5)))),
+#'   110 * (1 - exp(-0.18 * (age[16:30] - (-0.3))))
+#' ) + rnorm(30, 0, 5)
+#' group <- rep(c("Study1", "Study2"), each = 15)
+#' plot_age_length_heatmap(age = age, length = length, group = group)
 #' }
 #'
 #' @export
-plot_age_length_heatmap <- function(age, length, sex = NULL,
+plot_age_length_heatmap <- function(age, length, sex = NULL, group = NULL,
                                     bin_width_age = 1, bin_width_length = 5,
                                     add_smoother = TRUE) {
   # Create data frame
@@ -30,12 +42,19 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
   # Add sex if provided
   if (!is.null(sex)) {
     df$sex <- sex
-    # Filter out NA values
-    df <- df[!is.na(df$age) & !is.na(df$length) & !is.na(df$sex), ]
-  } else {
-    # Filter out NA values
-    df <- df[!is.na(df$age) & !is.na(df$length), ]
   }
+
+  # Add group if provided
+  if (!is.null(group)) {
+    df$group <- group
+  }
+
+  # Filter out NA values
+  complete_vars <- c("age", "length")
+  if (!is.null(sex)) complete_vars <- c(complete_vars, "sex")
+  if (!is.null(group)) complete_vars <- c(complete_vars, "group")
+
+  df <- df[complete.cases(df[complete_vars]), ]
 
   # Define bins
   age_breaks <- seq(floor(min(df$age)), ceiling(max(df$age)) + bin_width_age, by = bin_width_age)
@@ -58,6 +77,10 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
     counts <- as.data.frame(table(df$age_bin, df$length_bin, df$sex))
     names(counts) <- c("age_bin", "length_bin", "sex", "count")
 
+    # Convert count to numeric and filter out zero counts (table() creates factors)
+    counts$count <- as.numeric(as.character(counts$count))
+    counts <- counts[counts$count > 0, ]  # Remove rows with zero counts entirely
+
     # Add midpoint values to counts data
     counts$age_midpoint <- age_midpoints[as.numeric(counts$age_bin)]
     counts$length_midpoint <- length_midpoints[as.numeric(counts$length_bin)]
@@ -65,23 +88,41 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
     # Create plot using midpoint coordinates
     p <- ggplot2::ggplot(counts, ggplot2::aes(x = age_midpoint, y = length_midpoint, fill = count)) +
       ggplot2::geom_tile(width = bin_width_age * 0.9, height = bin_width_length * 0.9) +
-      ggplot2::scale_fill_gradient(name = "Count", low = "white", high = "steelblue") +
+      ggplot2::scale_fill_gradient(name = "Count", low = "lightgray", high = "steelblue", 
+                                   trans = "sqrt", na.value = "transparent") +
       ggplot2::labs(x = "Age", y = "Length") +
       ggplot2::facet_wrap(~sex)
 
-    # Add smoother if requested - now using same coordinate system
+    # Add smoother if requested
     if (add_smoother) {
-      p <- p + ggplot2::geom_smooth(
-        data = df,
-        ggplot2::aes(x = age, y = length, fill = NULL),
-        method = "loess", se = TRUE, colour = "red", linewidth = 1, alpha = 0.7,
-        inherit.aes = FALSE
-      )
+      if (!is.null(group)) {
+        # Multiple smooth lines colored by group (only map colour; avoid changing fill scale used by tiles)
+        p <- p + ggplot2::geom_smooth(
+          data = df,
+          ggplot2::aes(x = age, y = length, colour = group),
+          method = "loess", se = TRUE, linewidth = 1, alpha = 0.3,
+          inherit.aes = FALSE
+        ) +
+          ggplot2::scale_colour_discrete(name = "Group")
+      } else {
+        # Single smooth line
+        p <- p + ggplot2::geom_smooth(
+          data = df,
+          ggplot2::aes(x = age, y = length),
+          method = "loess", se = TRUE, colour = "red", fill = "red",
+          linewidth = 1, alpha = 0.3,
+          inherit.aes = FALSE
+        )
+      }
     }
   } else {
     counts <- as.data.frame(table(df$age_bin, df$length_bin))
     names(counts) <- c("age_bin", "length_bin", "count")
 
+    # Convert count to numeric and filter out zero counts (table() creates factors)
+    counts$count <- as.numeric(as.character(counts$count))
+    counts <- counts[counts$count > 0, ]  # Remove rows with zero counts entirely
+
     # Add midpoint values to counts data
     counts$age_midpoint <- age_midpoints[as.numeric(counts$age_bin)]
     counts$length_midpoint <- length_midpoints[as.numeric(counts$length_bin)]
@@ -89,17 +130,31 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
     # Create plot using midpoint coordinates
     p <- ggplot2::ggplot(counts, ggplot2::aes(x = age_midpoint, y = length_midpoint, fill = count)) +
       ggplot2::geom_tile(width = bin_width_age * 0.9, height = bin_width_length * 0.9) +
-      ggplot2::scale_fill_gradient(name = "Count", low = "white", high = "steelblue") +
+      ggplot2::scale_fill_gradient(name = "Count", low = "lightgray", high = "steelblue", 
+                                   trans = "sqrt", na.value = "transparent") +
       ggplot2::labs(x = "Age", y = "Length")
 
-    # Add smoother if requested - now using same coordinate system
+    # Add smoother if requested
     if (add_smoother) {
-      p <- p + ggplot2::geom_smooth(
-        data = df,
-        ggplot2::aes(x = age, y = length),
-        method = "loess", se = TRUE, colour = "red", linewidth = 1, alpha = 0.7,
-        inherit.aes = FALSE
-      )
+      if (!is.null(group)) {
+        # Multiple smooth lines colored by group (only map colour; avoid changing fill scale used by tiles)
+        p <- p + ggplot2::geom_smooth(
+          data = df,
+          ggplot2::aes(x = age, y = length, colour = group),
+          method = "loess", se = TRUE, linewidth = 1, alpha = 0.3,
+          inherit.aes = FALSE
+        ) +
+          ggplot2::scale_colour_discrete(name = "Group")
+      } else {
+        # Single smooth line
+        p <- p + ggplot2::geom_smooth(
+          data = df,
+          ggplot2::aes(x = age, y = length),
+          method = "loess", se = TRUE, colour = "red", fill = "red",
+          linewidth = 1, alpha = 0.3,
+          inherit.aes = FALSE
+        )
+      }
     }
   }
 
@@ -111,6 +166,7 @@ plot_age_length_heatmap <- function(age, length, sex = NULL,
 #' This function creates a plot showing the empirical coefficient of variation (CV)
 #' of length measurements by age. This is useful for understanding how variability
 #' in length changes with age and for validating CV models in von Bertalanffy fits.
+#' The smoother ribbon matches the line color with reduced transparency.
 #'
 #' @param age A numeric vector of ages
 #' @param length A numeric vector of lengths
@@ -213,7 +269,7 @@ plot_empirical_cv <- function(age, length, sex = NULL, min_n = 3, add_smoother =
     # Add smoother if requested
     if (add_smoother) {
       p <- p + ggplot2::geom_smooth(
-        method = "loess", se = TRUE, colour = "red", linewidth = 1, alpha = 0.7
+        method = "loess", se = TRUE, colour = "red", fill = "red", linewidth = 1, alpha = 0.3
       )
     }
   } else {
@@ -234,7 +290,7 @@ plot_empirical_cv <- function(age, length, sex = NULL, min_n = 3, add_smoother =
     # Add smoother if requested
     if (add_smoother) {
       p <- p + ggplot2::geom_smooth(
-        method = "loess", se = TRUE, colour = "red", linewidth = 1, alpha = 0.7
+        method = "loess", se = TRUE, colour = "red", fill = "red", linewidth = 1, alpha = 0.3
       )
     }
   }

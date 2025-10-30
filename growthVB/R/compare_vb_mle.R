@@ -21,6 +21,10 @@
 #'   When TRUE, permutations are performed within age bins to maintain age distribution
 #' @param age_bin_width Width of age bins in years for stratified permutation (default 2).
 #'   Only used when age_stratified = TRUE. Each bin will span this many years.
+#' @param test_curves Logical, whether to test for differences in growth curves (default TRUE).
+#'   This performs a permutation test on the maximum absolute deviance between fitted curves
+#' @param curve_ages Optional numeric vector of ages at which to evaluate curves for comparison.
+#'   If NULL, uses a sequence from min to max age with 0.5 year increments
 #'
 #' @return A list containing:
 #' \itemize{
@@ -29,6 +33,7 @@
 #'   \item \code{significant}: Logical indicating which parameters show significant differences
 #'   \item \code{group_parameters}: Parameter estimates for each group
 #'   \item \code{null_distributions}: Bootstrap null distributions for each parameter
+#'   \item \code{curve_comparison}: Results from growth curve comparison test (if test_curves = TRUE)
 #'   \item \code{method_info}: Information about the test method and settings
 #' }
 #'
@@ -93,7 +98,8 @@
 compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
                            parameters = c("Linf", "k", "t0", "CV"),
                            alpha = 0.05, verbose = TRUE, seed = NULL, min_obs = 50,
-                           age_stratified = TRUE, age_bin_width = 2) {
+                           age_stratified = TRUE, age_bin_width = 2,
+                           test_curves = TRUE, curve_ages = NULL) {
   # Set seed for reproducibility if provided
   if (!is.null(seed)) {
     set.seed(seed)
@@ -277,6 +283,99 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
       }
     }
     return(max_diffs)
+  }
+
+  # Function to calculate von Bertalanffy curve
+  vb_curve <- function(age, Linf, k, t0) {
+    Linf * (1 - exp(-k * (age - t0)))
+  }
+
+  # Function to extract curve parameters from fitted parameters
+  extract_curve_params <- function(params, sex_level = NULL) {
+    if (!is.null(sex_level)) {
+      # Sex-specific parameters
+      Linf <- params[[paste0("Linf_", sex_level)]]
+      k <- params[[paste0("K_", sex_level)]]
+      t0 <- params[[paste0("T0_", sex_level)]]
+    } else {
+      # Single model parameters
+      Linf <- params[["Linf"]]
+      k <- params[["k"]]
+      t0 <- params[["t0"]]
+    }
+    return(list(Linf = Linf, k = k, t0 = t0))
+  }
+
+  # Function to calculate maximum curve deviance between groups
+  calc_curve_deviance <- function(group_params, eval_ages, sex_levels = NULL) {
+    n_groups <- nrow(group_params)
+    group_names <- rownames(group_params)
+    
+    if (!is.null(sex_levels)) {
+      # Sex-specific models: calculate deviance for each sex separately, then take maximum
+      max_deviance_overall <- 0
+      deviance_by_sex <- list()
+      
+      for (sex_level in sex_levels) {
+        # Calculate curves for each group for this sex
+        group_curves <- matrix(NA, nrow = n_groups, ncol = length(eval_ages))
+        rownames(group_curves) <- group_names
+        
+        for (i in 1:n_groups) {
+          curve_params <- extract_curve_params(group_params[i, ], sex_level)
+          if (!any(is.na(unlist(curve_params)))) {
+            group_curves[i, ] <- vb_curve(eval_ages, curve_params$Linf, 
+                                         curve_params$k, curve_params$t0)
+          }
+        }
+        
+        # Calculate maximum pairwise deviance for this sex
+        max_deviance_sex <- 0
+        if (sum(complete.cases(group_curves)) >= 2) {
+          for (i in 1:(n_groups-1)) {
+            for (j in (i+1):n_groups) {
+              if (!any(is.na(group_curves[i, ])) && !any(is.na(group_curves[j, ]))) {
+                deviance_ij <- max(abs(group_curves[i, ] - group_curves[j, ]))
+                max_deviance_sex <- max(max_deviance_sex, deviance_ij)
+              }
+            }
+          }
+        }
+        
+        deviance_by_sex[[sex_level]] <- max_deviance_sex
+        max_deviance_overall <- max(max_deviance_overall, max_deviance_sex)
+      }
+      
+      return(list(overall = max_deviance_overall, by_sex = deviance_by_sex))
+      
+    } else {
+      # Single model: calculate curves for each group
+      group_curves <- matrix(NA, nrow = n_groups, ncol = length(eval_ages))
+      rownames(group_curves) <- group_names
+      
+      for (i in 1:n_groups) {
+        curve_params <- extract_curve_params(group_params[i, ])
+        if (!any(is.na(unlist(curve_params)))) {
+          group_curves[i, ] <- vb_curve(eval_ages, curve_params$Linf, 
+                                       curve_params$k, curve_params$t0)
+        }
+      }
+      
+      # Calculate maximum pairwise deviance
+      max_deviance <- 0
+      if (sum(complete.cases(group_curves)) >= 2) {
+        for (i in 1:(n_groups-1)) {
+          for (j in (i+1):n_groups) {
+            if (!any(is.na(group_curves[i, ])) && !any(is.na(group_curves[j, ]))) {
+              deviance_ij <- max(abs(group_curves[i, ] - group_curves[j, ]))
+              max_deviance <- max(max_deviance, deviance_ij)
+            }
+          }
+        }
+      }
+      
+      return(list(overall = max_deviance))
+    }
   }
 
   # Fit models to each group and get observed parameters
@@ -508,6 +607,143 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     cat("\n* indicates significance at alpha =", alpha, "\n")
   }
 
+  # Curve comparison test
+  curve_results <- NULL
+  if (test_curves) {
+    if (verbose) cat("\nTesting growth curve differences...\n")
+    
+    # Define evaluation ages if not provided
+    if (is.null(curve_ages)) {
+      curve_ages <- seq(from = min(age), to = max(age), by = 0.5)
+    }
+    
+    if (verbose) {
+      cat("Evaluating curves at", length(curve_ages), "age points from", 
+          round(min(curve_ages), 1), "to", round(max(curve_ages), 1), "\n")
+    }
+    
+    # Calculate observed curve deviance
+    sex_levels_for_curves <- if (!is.null(sex)) levels(sex) else NULL
+    observed_curve_deviance <- calc_curve_deviance(group_params, curve_ages, sex_levels_for_curves)
+    
+    if (verbose) {
+      if (!is.null(sex)) {
+        cat("Observed curve deviance:\n")
+        cat("  Overall maximum:", round(observed_curve_deviance$overall, 3), "\n")
+        for (sex_level in names(observed_curve_deviance$by_sex)) {
+          cat("  ", sex_level, ":", round(observed_curve_deviance$by_sex[[sex_level]], 3), "\n")
+        }
+      } else {
+        cat("Observed curve deviance:", round(observed_curve_deviance$overall, 3), "\n")
+      }
+    }
+    
+    # Bootstrap curve deviances using the same permutation logic
+    null_curve_deviances <- numeric(n_bootstrap)
+    if (!is.null(sex)) {
+      null_curve_deviances_by_sex <- matrix(NA, nrow = n_bootstrap, ncol = length(sex_levels_for_curves))
+      colnames(null_curve_deviances_by_sex) <- sex_levels_for_curves
+    }
+    
+    if (verbose) cat("Bootstrap testing curve deviances...\n")
+    
+    # Use the same permutation results from the parameter test
+    for (b in 1:n_bootstrap) {
+      # Permute group labels (same logic as parameter test)
+      if (age_stratified) {
+        perm_group <- group
+        for (bin_level in levels(age_bins)) {
+          bin_indices <- which(age_bins == bin_level)
+          if (length(bin_indices) > 1) {
+            perm_group[bin_indices] <- sample(group[bin_indices])
+          }
+        }
+      } else {
+        perm_group <- sample(group)
+      }
+      
+      # Fit models to permuted groups for curve analysis
+      perm_params_curves <- matrix(NA, nrow = length(group_levels), ncol = length(test_parameters))
+      colnames(perm_params_curves) <- test_parameters
+      rownames(perm_params_curves) <- group_levels
+      
+      for (i in seq_along(group_levels)) {
+        group_mask <- perm_group == group_levels[i]
+        group_age_i <- age[group_mask]
+        group_length_i <- length[group_mask]
+        group_sex_i <- if (!is.null(sex)) sex[group_mask] else NULL
+        
+        if (length(group_age_i) >= 10) {
+          start_vals <- group_start_values[[group_levels[i]]]
+          params_i <- fit_group_model(group_age_i, group_length_i, group_sex_i, start_vals)
+          if (!is.null(params_i)) {
+            perm_params_curves[i, ] <- params_i[test_parameters]
+          }
+        }
+      }
+      
+      # Calculate curve deviance for this permutation
+      perm_curve_deviance <- calc_curve_deviance(perm_params_curves, curve_ages, sex_levels_for_curves)
+      null_curve_deviances[b] <- perm_curve_deviance$overall
+      
+      if (!is.null(sex)) {
+        for (sex_level in sex_levels_for_curves) {
+          null_curve_deviances_by_sex[b, sex_level] <- perm_curve_deviance$by_sex[[sex_level]]
+        }
+      }
+    }
+    
+    # Calculate p-values for curve tests
+    curve_p_value <- sum(null_curve_deviances >= observed_curve_deviance$overall, na.rm = TRUE) / 
+                     sum(!is.na(null_curve_deviances))
+    
+    curve_p_values_by_sex <- NULL
+    if (!is.null(sex)) {
+      curve_p_values_by_sex <- numeric(length(sex_levels_for_curves))
+      names(curve_p_values_by_sex) <- sex_levels_for_curves
+      for (sex_level in sex_levels_for_curves) {
+        curve_p_values_by_sex[sex_level] <- 
+          sum(null_curve_deviances_by_sex[, sex_level] >= observed_curve_deviance$by_sex[[sex_level]], na.rm = TRUE) /
+          sum(!is.na(null_curve_deviances_by_sex[, sex_level]))
+      }
+    }
+    
+    # Determine significance
+    curve_significant <- curve_p_value < alpha
+    curve_significant_by_sex <- NULL
+    if (!is.null(sex)) {
+      curve_significant_by_sex <- curve_p_values_by_sex < alpha
+    }
+    
+    if (verbose) {
+      cat("\nCurve comparison results:\n")
+      cat(sprintf("Overall curve deviance: p = %.4f %s\n", 
+                 curve_p_value, ifelse(curve_significant, "*", "")))
+      if (!is.null(sex)) {
+        for (sex_level in names(curve_p_values_by_sex)) {
+          cat(sprintf("%s curve deviance: p = %.4f %s\n", 
+                     sex_level, curve_p_values_by_sex[sex_level], 
+                     ifelse(curve_significant_by_sex[sex_level], "*", "")))
+        }
+      }
+    }
+    
+    # Store curve results
+    curve_results <- list(
+      observed_deviance = observed_curve_deviance,
+      p_value = curve_p_value,
+      significant = curve_significant,
+      null_deviances = null_curve_deviances,
+      evaluation_ages = curve_ages
+    )
+    
+    if (!is.null(sex)) {
+      curve_results$p_values_by_sex <- curve_p_values_by_sex
+      curve_results$significant_by_sex <- curve_significant_by_sex
+      curve_results$null_deviances_by_sex <- null_curve_deviances_by_sex
+    }
+  }
+
   # Prepare results
   result <- list(
     observed_diffs = observed_diffs,
@@ -515,6 +751,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     significant = significant,
     group_parameters = group_params,
     null_distributions = null_diffs,
+    curve_comparison = curve_results,
     method_info = list(
       n_bootstrap = n_bootstrap,
       alpha = alpha,
@@ -528,7 +765,9 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
       total_n = length(age),
       age_stratified = age_stratified,
       age_bin_width = if (age_stratified) age_bin_width else NULL,
-      age_range = c(min(age), max(age))
+      age_range = c(min(age), max(age)),
+      test_curves = test_curves,
+      curve_ages_range = if (test_curves && !is.null(curve_ages)) c(min(curve_ages), max(curve_ages)) else NULL
     )
   )
 

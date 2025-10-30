@@ -19,8 +19,8 @@
 #'   Combinations with fewer observations will be removed before analysis
 #' @param age_stratified Logical, whether to use age-stratified permutation (default TRUE).
 #'   When TRUE, permutations are performed within age bins to maintain age distribution
-#' @param n_age_bins Number of age bins for stratified permutation (default 10).
-#'   Only used when age_stratified = TRUE
+#' @param age_bin_width Width of age bins in years for stratified permutation (default 2).
+#'   Only used when age_stratified = TRUE. Each bin will span this many years.
 #'
 #' @return A list containing:
 #' \itemize{
@@ -44,10 +44,11 @@
 #'       that exceed the observed differences
 #' }
 #'
-#' When \code{age_stratified = TRUE} (default), permutations are performed within
+# When \code{age_stratified = TRUE} (default), permutations are performed within
 #' age bins to ensure that age distributions remain comparable between groups.
 #' This is crucial for validity as it tests differences in growth parameters
-#' rather than differences in age distribution.
+#' rather than differences in age distribution. Age bins are created using
+#' \code{age_bin_width} to define the width of each bin in years.
 #'
 #' For multiple groups, the test statistic is the maximum pairwise difference
 #' between any two groups for each parameter.
@@ -92,7 +93,7 @@
 compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
                            parameters = c("Linf", "k", "t0", "CV"),
                            alpha = 0.05, verbose = TRUE, seed = NULL, min_obs = 50,
-                           age_stratified = TRUE, n_age_bins = 10) {
+                           age_stratified = TRUE, age_bin_width = 2) {
   # Set seed for reproducibility if provided
   if (!is.null(seed)) {
     set.seed(seed)
@@ -390,17 +391,24 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     print(observed_diffs)
     cat("\nStarting bootstrap permutation test with", n_bootstrap, "iterations...\n")
     if (age_stratified) {
-      cat("Using age-stratified permutation with", n_age_bins, "age bins\n")
+      cat("Using age-stratified permutation with", age_bin_width, "year age bins\n")
     }
   }
 
   # Prepare age bins for stratified permutation
   if (age_stratified) {
-    age_breaks <- seq(min(age), max(age), length.out = n_age_bins + 1)
-    age_bins <- cut(age, breaks = age_breaks, include.lowest = TRUE)
+    # Create age bins based on bin width rather than number of bins
+    min_age <- min(age)
+    max_age <- max(age)
+    age_breaks <- seq(from = min_age, to = max_age + age_bin_width, by = age_bin_width)
+    age_bins <- cut(age, breaks = age_breaks, include.lowest = TRUE, right = FALSE)
+    
+    # Calculate actual number of bins created
+    n_bins_created <- length(levels(age_bins))
     
     if (verbose) {
-      cat("Age range:", round(min(age), 1), "to", round(max(age), 1), "\n")
+      cat("Age range:", round(min_age, 1), "to", round(max_age, 1), "\n")
+      cat("Bin width:", age_bin_width, "years,", n_bins_created, "bins created\n")
       cat("Age bin sizes:", table(age_bins), "\n")
     }
   }
@@ -510,7 +518,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
       sample_sizes = as.numeric(table(group)),
       total_n = length(age),
       age_stratified = age_stratified,
-      n_age_bins = if (age_stratified) n_age_bins else NULL,
+      age_bin_width = if (age_stratified) age_bin_width else NULL,
       age_range = c(min(age), max(age))
     )
   )

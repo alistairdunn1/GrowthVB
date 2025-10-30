@@ -16,7 +16,7 @@ compare_vb_mle(
   seed = NULL,
   min_obs = 50,
   age_stratified = TRUE,
-  n_age_bins = 10
+  age_bin_width = 2
 )
 }
 \arguments{
@@ -45,8 +45,8 @@ Combinations with fewer observations will be removed before analysis}
 \item{age_stratified}{Logical, whether to use age-stratified permutation (default TRUE).
 When TRUE, permutations are performed within age bins to maintain age distribution}
 
-\item{n_age_bins}{Number of age bins for stratified permutation (default 10).
-Only used when age_stratified = TRUE}
+\item{age_bin_width}{Width of age bins in years for stratified permutation (default 2).
+Only used when age_stratified = TRUE. Each bin will span this many years.}
 }
 \value{
 A list containing:
@@ -77,10 +77,10 @@ a bootstrap permutation test by:
 that exceed the observed differences
 }
 
-When \code{age_stratified = TRUE} (default), permutations are performed within
 age bins to ensure that age distributions remain comparable between groups.
 This is crucial for validity as it tests differences in growth parameters
-rather than differences in age distribution.
+rather than differences in age distribution. Age bins are created using
+\code{age_bin_width} to define the width of each bin in years.
 
 For multiple groups, the test statistic is the maximum pairwise difference
 between any two groups for each parameter.

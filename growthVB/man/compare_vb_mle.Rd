@@ -56,8 +56,12 @@ A list containing:
 \item \code{significant}: Logical indicating which parameters show significant differences
 \item \code{group_parameters}: Parameter estimates for each group
 \item \code{null_distributions}: Bootstrap null distributions for each parameter
+\item \code{curve_comparison}: Results from growth curve comparison test (if test_curves = TRUE)
 \item \code{method_info}: Information about the test method and settings
 }
+
+The returned object has class \code{vb_comparison} and can be summarised using
+\code{summary()} or \code{print()} methods for comprehensive formatted output.
 }
 \description{
 This function performs a bootstrap permutation test to evaluate whether von Bertalanffy
@@ -119,6 +123,12 @@ result_sex <- compare_vb_mle(
 print(result$p_values)
 print(result$significant)
 print(result$group_parameters)
+
+# Use summary method for comprehensive formatted output
+summary(result)
+
+# Or simply print the object
+result
 }
 
 }

@@ -377,6 +377,12 @@ print(comparison$p_values)
 print(comparison$significant)
 print(comparison$group_parameters)
 
+# Use summary method for comprehensive formatted output
+summary(comparison)
+
+# Or simply print the object (uses print method)
+comparison
+
 # Test with sex-specific models
 sex <- rep(c("M", "F"), length.out = length(age))
 comparison_sex <- compare_vb_mle(
@@ -399,7 +405,20 @@ The function returns:
 - **significant**: Logical indicating which parameters show significant differences
 - **group_parameters**: Parameter estimates for each group
 - **null_distributions**: Bootstrap null distributions for visualisation
+- **curve_comparison**: Results from growth curve comparison test (if enabled)
 - **method_info**: Test settings and sample information
+
+**Summary Methods:**
+
+The `summary()` method provides a comprehensive, formatted report including:
+
+- Test method and configuration details
+- Sample sizes and group information  
+- Parameter estimates for each group
+- Statistical test results with p-values and significance indicators
+- Growth curve comparison results (if performed)
+
+Use `print(result)` or simply `result` for the same output, or `summary(result, digits = 3)` to control decimal precision.
 
 **Function Parameters:**
 

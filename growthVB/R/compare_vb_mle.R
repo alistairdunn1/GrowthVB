@@ -774,3 +774,181 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
   class(result) <- "vb_comparison"
   return(result)
 }
+
+#' Summary Method for Von Bertalanffy Growth Parameter Comparison
+#'
+#' Provides a formatted summary of bootstrap permutation test results for
+#' von Bertalanffy growth parameter comparisons between groups.
+#'
+#' @param object A \code{vb_comparison} object returned by \code{compare_vb_mle}
+#' @param digits Number of decimal places for numeric output (default 4)
+#' @param ... Additional arguments (currently unused)
+#'
+#' @details
+#' The summary provides:
+#' \itemize{
+#'   \item Test method and configuration details
+#'   \item Sample sizes and group information
+#'   \item Parameter estimates for each group
+#'   \item Statistical test results with p-values and significance
+#'   \item Growth curve comparison results (if performed)
+#' }
+#'
+#' @return Invisibly returns the input object after printing the summary
+#'
+#' @examples
+#' \dontrun{
+#' # After running compare_vb_mle
+#' result <- compare_vb_mle(age, length, group)
+#' summary(result)
+#' }
+#'
+#' @export
+summary.vb_comparison <- function(object, digits = 4, ...) {
+  info <- object$method_info
+  
+  # Header
+  cat("Von Bertalanffy Growth Parameter Comparison\n")
+  cat("==========================================\n\n")
+  
+  # Method information
+  cat("Test Method:\n")
+  cat("  Bootstrap permutation test with", info$n_bootstrap, "iterations\n")
+  cat("  Significance level: α =", info$alpha, "\n")
+  if (info$age_stratified) {
+    cat("  Age-stratified permutation with", info$age_bin_width, "year age bins\n")
+  } else {
+    cat("  Simple random permutation\n")
+  }
+  cat("\n")
+  
+  # Sample information
+  cat("Sample Information:\n")
+  cat("  Total observations:", info$total_n, "\n")
+  cat("  Number of groups:", info$n_groups, "\n")
+  cat("  Groups:", paste(info$group_names, collapse = ", "), "\n")
+  cat("  Group sizes:", paste(paste(info$group_names, info$sample_sizes, sep = ": "), collapse = ", "), "\n")
+  cat("  Age range:", round(info$age_range[1], 1), "to", round(info$age_range[2], 1), "years\n")
+  
+  if (info$has_sex) {
+    cat("  Sex-specific models fitted for:", paste(info$sex_levels, collapse = ", "), "\n")
+  }
+  cat("\n")
+  
+  # Parameter estimates
+  cat("Parameter Estimates by Group:\n")
+  param_matrix <- object$group_parameters
+  
+  # Format parameter matrix for display
+  formatted_params <- apply(param_matrix, 2, function(x) {
+    ifelse(is.na(x), "NA", sprintf(paste0("%.", digits, "f"), x))
+  })
+  
+  if (is.vector(formatted_params)) {
+    # Single parameter case
+    formatted_params <- matrix(formatted_params, nrow = nrow(param_matrix))
+    colnames(formatted_params) <- colnames(param_matrix)
+    rownames(formatted_params) <- rownames(param_matrix)
+  }
+  
+  print(formatted_params, quote = FALSE)
+  cat("\n")
+  
+  # Statistical test results
+  cat("Statistical Test Results:\n")
+  cat("  Parameters tested:", paste(info$parameters_tested, collapse = ", "), "\n\n")
+  
+  # Create results table
+  results_df <- data.frame(
+    Parameter = names(object$p_values),
+    Observed_Diff = sprintf(paste0("%.", digits, "f"), object$observed_diffs),
+    P_Value = sprintf(paste0("%.", digits, "f"), object$p_values),
+    Significant = ifelse(object$significant, "Yes", "No"),
+    stringsAsFactors = FALSE
+  )
+  
+  # Handle NA values
+  results_df$Observed_Diff[is.na(object$observed_diffs)] <- "NA"
+  results_df$P_Value[is.na(object$p_values)] <- "NA"
+  results_df$Significant[is.na(object$significant)] <- "NA"
+  
+  print(results_df, row.names = FALSE)
+  
+  # Count significant results
+  n_significant <- sum(object$significant, na.rm = TRUE)
+  n_tested <- sum(!is.na(object$significant))
+  cat("\n")
+  cat("  Summary:", n_significant, "of", n_tested, "parameters show significant differences\n")
+  
+  # Growth curve comparison results
+  if (info$test_curves && !is.null(object$curve_comparison)) {
+    cat("\n")
+    cat("Growth Curve Comparison:\n")
+    
+    curve_res <- object$curve_comparison
+    
+    if (!is.null(info$curve_ages_range)) {
+      cat("  Curves evaluated from age", round(info$curve_ages_range[1], 1), 
+          "to", round(info$curve_ages_range[2], 1), "years\n")
+    }
+    cat("  Evaluation points:", length(curve_res$evaluation_ages), "\n")
+    
+    if (info$has_sex) {
+      cat("  Overall maximum deviance:", sprintf(paste0("%.", digits, "f"), curve_res$observed_deviance$overall), "\n")
+      cat("  Overall curve p-value:", sprintf(paste0("%.", digits, "f"), curve_res$p_value), 
+          ifelse(curve_res$significant, " *", ""), "\n")
+      
+      cat("  Sex-specific results:\n")
+      for (sex_level in names(curve_res$observed_deviance$by_sex)) {
+        cat("    ", sex_level, "- Deviance:", 
+            sprintf(paste0("%.", digits, "f"), curve_res$observed_deviance$by_sex[[sex_level]]),
+            ", p-value:", sprintf(paste0("%.", digits, "f"), curve_res$p_values_by_sex[sex_level]),
+            ifelse(curve_res$significant_by_sex[sex_level], " *", ""), "\n")
+      }
+    } else {
+      cat("  Maximum curve deviance:", sprintf(paste0("%.", digits, "f"), curve_res$observed_deviance$overall), "\n")
+      cat("  Curve comparison p-value:", sprintf(paste0("%.", digits, "f"), curve_res$p_value), 
+          ifelse(curve_res$significant, " *", ""), "\n")
+    }
+    
+    if (curve_res$significant || (info$has_sex && any(curve_res$significant_by_sex, na.rm = TRUE))) {
+      cat("  Result: Significant differences in growth curves detected\n")
+    } else {
+      cat("  Result: No significant differences in growth curves detected\n")
+    }
+  }
+  
+  cat("\n")
+  cat("* indicates significance at α =", info$alpha, "\n")
+  cat("\nNote: P-values calculated as the proportion of bootstrap permutations\n")
+  cat("      with differences greater than or equal to the observed difference.\n")
+  
+  invisible(object)
+}
+
+#' Print Method for Von Bertalanffy Growth Parameter Comparison
+#'
+#' Provides a concise summary of bootstrap permutation test results for
+#' von Bertalanffy growth parameter comparisons between groups.
+#'
+#' @param x A \code{vb_comparison} object returned by \code{compare_vb_mle}
+#' @param ... Additional arguments passed to \code{summary.vb_comparison}
+#'
+#' @details
+#' This is a simplified wrapper around the summary method that provides
+#' the same detailed output. For more control over formatting, use
+#' \code{summary()} directly.
+#'
+#' @return Invisibly returns the input object after printing the summary
+#'
+#' @examples
+#' \dontrun{
+#' # After running compare_vb_mle
+#' result <- compare_vb_mle(age, length, group)
+#' print(result)  # or simply: result
+#' }
+#'
+#' @export
+print.vb_comparison <- function(x, ...) {
+  summary.vb_comparison(x, ...)
+}

@@ -337,6 +337,13 @@ print(fit_uncorrected$parameters)
 
 Compare von Bertalanffy growth parameters between groups using bootstrap permutation testing. This function evaluates whether growth parameters differ significantly between two or more groups by comparing observed differences against a null distribution generated through random permutation of group labels.
 
+**Key Features:**
+
+- **Sex model support**: Works with both single and sex-specific von Bertalanffy models
+- **Data quality filtering**: Removes groups/sex combinations with insufficient observations (default minimum 50)
+- **Age-stratified permutation**: Preserves age distributions between groups for valid statistical testing (default 2-year age bins)
+- **Bootstrap optimisation**: Uses observed parameters as starting values for faster convergence
+
 ```r
 # Simulate data for two populations with different growth parameters
 set.seed(123)
@@ -353,12 +360,15 @@ age <- c(age1, age2)
 length <- c(length1, length2)
 population <- rep(c("Pop_A", "Pop_B"), each = n_per_group)
 
-# Perform bootstrap permutation test
+# Perform bootstrap permutation test with enhanced features
 comparison <- compare_vb_mle(
   age = age, 
   length = length, 
   group = population,
   n_bootstrap = 500,
+  min_obs = 40,          # Minimum observations per group
+  age_stratified = TRUE, # Use age-stratified permutation
+  age_bin_width = 2,     # 2-year age bins for stratification
   seed = 123
 )
 
@@ -366,18 +376,45 @@ comparison <- compare_vb_mle(
 print(comparison$p_values)
 print(comparison$significant)
 print(comparison$group_parameters)
+
+# Test with sex-specific models
+sex <- rep(c("M", "F"), length.out = length(age))
+comparison_sex <- compare_vb_mle(
+  age = age, 
+  length = length, 
+  group = population,
+  sex = sex,             # Sex-specific models
+  parameters = c("Linf", "k"), # Test specific parameters
+  n_bootstrap = 500,
+  min_obs = 20,          # Lower threshold for sex combinations
+  age_bin_width = 3,     # 3-year age bins
+  seed = 123
+)
 ```
 
 The function returns:
 
 - **observed_diffs**: Observed differences between groups for each parameter
-- **p_values**: P-values for each parameter comparison
+- **p_values**: P-values for each parameter comparison  
 - **significant**: Logical indicating which parameters show significant differences
 - **group_parameters**: Parameter estimates for each group
-- **null_distributions**: Bootstrap null distributions for visualization
+- **null_distributions**: Bootstrap null distributions for visualisation
 - **method_info**: Test settings and sample information
 
-Parameters can be selectively tested using the `parameters` argument (default tests all: "Linf", "k", "t0", "CV").
+**Function Parameters:**
+
+- `age`, `length`, `group`: Vectors of age, length, and group classifications
+- `sex`: Optional factor for sex-specific models (expands parameters to sex-specific versions)
+- `n_bootstrap`: Number of bootstrap permutations (default 1000)
+- `parameters`: Character vector of parameters to test (default: "Linf", "k", "t0", "CV")
+- `min_obs`: Minimum observations per group/sex combination (default 50)
+- `age_stratified`: Whether to use age-stratified permutation (default TRUE)
+- `age_bin_width`: Width of age bins in years for stratification (default 2)
+- `alpha`: Significance level (default 0.05)
+- `verbose`: Whether to print progress messages (default TRUE)
+- `seed`: Optional seed for reproducible results
+
+Parameters can be selectively tested using the `parameters` argument. For sex models, parameters are automatically expanded to sex-specific versions (e.g., "Linf_M", "Linf_F").
 
 ### Bayesian Model
 

@@ -247,18 +247,55 @@ This approach ensures that:
 - Original data relationships are preserved
 - Results can be matched to external datasets
 - Downstream analysis maintains data integrity
-- Traceability is maintained throughout the modeling process
+- Traceability is maintained throughout the modelling process
 
-## 9. Implementation in the growthVB Package
+## 9. Statistical Comparisons Between Groups
+
+### 9.1 Bootstrap Permutation Testing
+
+The `compare_vb_mle()` function implements bootstrap permutation testing to compare von Bertalanffy growth parameters between multiple groups. This non-parametric approach tests the null hypothesis that growth parameters are identical across groups.
+
+#### 9.1.1 Test Procedure
+
+For two or more groups, the test follows these steps:
+
+1. **Fit models**: Estimate VBGF parameters for each group separately
+2. **Calculate observed differences**: Compute maximum pairwise differences for each parameter
+3. **Permutation resampling**: Randomly reassign group labels $B$ times
+4. **Null distribution**: Fit models to each permuted dataset and calculate differences
+5. **P-value calculation**: Proportion of permuted differences ≥ observed differences
+
+#### 9.1.2 Age-Stratified Permutation
+
+To ensure valid testing when age distributions differ between groups, permutations are performed within age strata:
+
+$$\text{Age bins} = \{\text{bin}_1, \text{bin}_2, \ldots, \text{bin}_B\}$$
+
+where each bin spans a fixed age width (default 2 years). Group labels are permuted only within each age bin, preserving age distributions whilst testing growth parameter differences.
+
+#### 9.1.3 Sex-Specific Models
+
+For sex-specific comparisons, parameters are expanded to sex-specific versions:
+- Single model: $\{\text{Linf}, k, t_0, \text{CV}\}$
+- Sex model: $\{\text{Linf}_M, \text{Linf}_F, k_M, k_F, t_{0M}, t_{0F}, \text{CV}_M, \text{CV}_F\}$
+
+Each sex-specific parameter is tested independently, allowing detection of sex-specific growth differences between populations.
+
+#### 9.1.4 Optimisation Enhancement
+
+To improve computational efficiency, observed parameter estimates are used as starting values for bootstrap iterations, significantly reducing convergence time whilst maintaining estimation accuracy.
+
+## 10. Implementation in the growthVB Package
 
 The `growthVB` package implements these methods with the following core functions:
 
 1. `fit_vb_mle()`: Frequentist MLE estimation with optional heteroscedasticity modelling
 2. `fit_vb_brms()`: Bayesian estimation using the brms package with Stan backend
-3. `plot_vb_predictions()`: Visualizing model fit with confidence/credible intervals
-4. `plot_vb_posteriors()`: Diagnostic plots for Bayesian models including posterior distributions and correlations
+3. `compare_vb_mle()`: Bootstrap permutation testing for comparing growth parameters between groups
+4. `plot_vb_predictions()`: Visualising model fit with confidence/credible intervals
+5. `plot_vb_posteriors()`: Diagnostic plots for Bayesian models including posterior distributions and correlations
 
-## 9. References
+## 11. References
 
 1. von Bertalanffy, L. (1938). A quantitative theory of organic growth. Human Biology, 10(2), 181-213.
 2. Katsanevakis, S. (2006). Modelling fish growth: Model selection, multi-model inference and model selection uncertainty. Fisheries Research, 81(2-3), 229-235.

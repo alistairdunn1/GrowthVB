@@ -233,7 +233,53 @@ diagnostics$residuals_vs_age     # Residuals vs age
 | [Model 2] | [n]        | [value]        | [value] | [value] | [value] |
 | [Model 3] | [n]        | [value]        | [value] | [value] | [value] |
 
-#### 4.3.3 Bayesian Diagnostic Plots
+#### 4.3.3 Group Comparisons
+
+*[Include this section if comparing growth between multiple groups/populations]*
+
+**Bootstrap permutation test results:**
+
+```r
+# Compare growth parameters between groups
+group_comparison <- compare_vb_mle(
+  age = age_data,
+  length = length_data, 
+  group = group_data,
+  n_bootstrap = 1000,
+  min_obs = 50,          # Minimum observations per group
+  age_stratified = TRUE, # Preserve age distributions
+  age_bin_width = 2,     # 2-year age bins
+  seed = 123
+)
+
+# View statistical test results  
+print(group_comparison$p_values)
+print(group_comparison$significant)
+```
+
+**Parameter comparison table:**
+
+| Parameter | Group A | Group B | Difference | P-value | Significant |
+| --------- | ------- | ------- | ---------- | ------- | ----------- |
+| L∞        | [value] | [value] | [value]    | [value] | [Yes/No]    |
+| k         | [value] | [value] | [value]    | [value] | [Yes/No]    |
+| t₀        | [value] | [value] | [value]    | [value] | [Yes/No]    |
+| CV        | [value] | [value] | [value]    | [value] | [Yes/No]    |
+
+*[Discuss the biological significance of any detected differences]*
+
+**Sex-specific group comparisons:**
+
+*[If using sex-specific models, include results for sex-specific parameters]*
+
+| Parameter | Group A | Group B | Difference | P-value | Significant |
+| --------- | ------- | ------- | ---------- | ------- | ----------- |
+| L∞_M      | [value] | [value] | [value]    | [value] | [Yes/No]    |
+| L∞_F      | [value] | [value] | [value]    | [value] | [Yes/No]    |
+| k_M       | [value] | [value] | [value]    | [value] | [Yes/No]    |
+| k_F       | [value] | [value] | [value]    | [value] | [Yes/No]    |
+
+#### 4.3.4 Bayesian Diagnostic Plots
 
 *[For Bayesian analyses only - Insert convergence diagnostics and posterior distribution plots]*
 

@@ -8,11 +8,15 @@ compare_vb_mle(
   age,
   length,
   group,
+  sex = NULL,
   n_bootstrap = 1000,
   parameters = c("Linf", "k", "t0", "CV"),
   alpha = 0.05,
   verbose = TRUE,
-  seed = NULL
+  seed = NULL,
+  min_obs = 50,
+  age_stratified = TRUE,
+  n_age_bins = 10
 )
 }
 \arguments{
@@ -22,15 +26,27 @@ compare_vb_mle(
 
 \item{group}{A factor or character vector specifying the group for each observation}
 
+\item{sex}{Optional factor or character vector specifying sex for each observation (for sex-specific models)}
+
 \item{n_bootstrap}{Number of bootstrap permutations (default 1000)}
 
-\item{parameters}{Character vector of parameters to test. Options: "Linf", "k", "t0", "CV" (default all)}
+\item{parameters}{Character vector of parameters to test. Options: "Linf", "k", "t0", "CV" (default all).
+For sex models, parameters are automatically expanded to sex-specific versions (e.g., "Linf_M", "Linf_F")}
 
 \item{alpha}{Significance level for the test (default 0.05)}
 
 \item{verbose}{Logical, whether to print progress messages (default TRUE)}
 
 \item{seed}{Optional seed for reproducible results}
+
+\item{min_obs}{Minimum number of observations required per sex/group combination (default 50).
+Combinations with fewer observations will be removed before analysis}
+
+\item{age_stratified}{Logical, whether to use age-stratified permutation (default TRUE).
+When TRUE, permutations are performed within age bins to maintain age distribution}
+
+\item{n_age_bins}{Number of age bins for stratified permutation (default 10).
+Only used when age_stratified = TRUE}
 }
 \value{
 A list containing:
@@ -54,12 +70,17 @@ The function fits separate von Bertalanffy models to each group, then performs
 a bootstrap permutation test by:
 \enumerate{
 \item Computing observed parameter differences between groups
-\item Randomly permuting group labels n_bootstrap times
+\item Randomly permuting group labels n_bootstrap times (with optional age stratification)
 \item Fitting models to each permuted dataset
 \item Computing parameter differences for each permutation
 \item Calculating p-values as the proportion of permuted differences
 that exceed the observed differences
 }
+
+When \code{age_stratified = TRUE} (default), permutations are performed within
+age bins to ensure that age distributions remain comparable between groups.
+This is crucial for validity as it tests differences in growth parameters
+rather than differences in age distribution.
 
 For multiple groups, the test statistic is the maximum pairwise difference
 between any two groups for each parameter.
@@ -81,9 +102,16 @@ age <- c(age1, age2)
 length <- c(length1, length2)
 group <- rep(c("Population_A", "Population_B"), each = n_per_group)
 
-# Perform bootstrap permutation test
+# Test for differences in basic parameters
 result <- compare_vb_mle(
   age = age, length = length, group = group,
+  n_bootstrap = 500, seed = 123
+)
+
+# Test with sex-specific models
+sex <- rep(c("M", "F"), length.out = length(age))
+result_sex <- compare_vb_mle(
+  age = age, length = length, group = group, sex = sex,
   n_bootstrap = 500, seed = 123
 )
 

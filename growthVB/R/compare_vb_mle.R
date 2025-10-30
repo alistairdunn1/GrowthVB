@@ -239,7 +239,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
   }
 
   # Function to fit VB model to a group and extract parameters
-  fit_group_model <- function(group_age, group_length, group_sex = NULL) {
+  fit_group_model <- function(group_age, group_length, group_sex = NULL, start_vals = NULL) {
     tryCatch(
       {
         # Load the fit_vb_mle function (assuming it's available)
@@ -247,7 +247,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
           stop("fit_vb_mle function not found. Please load the growthVB package.")
         }
 
-        fit <- fit_vb_mle(age = group_age, length = group_length, sex = group_sex)
+        fit <- fit_vb_mle(age = group_age, length = group_length, sex = group_sex, start_values = start_vals)
         return(extract_parameters(fit))
       },
       error = function(e) {
@@ -315,13 +315,35 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     cat("Testing parameters:", paste(test_parameters, collapse = ", "), "\n")
   }
 
-  # Initialize parameter matrix
+  # Initialize parameter matrix and starting values storage
   group_params <- matrix(NA, nrow = length(group_levels), ncol = length(test_parameters))
   colnames(group_params) <- test_parameters
   rownames(group_params) <- group_levels
   
+  # Store starting values for each group (for bootstrap efficiency)
+  group_start_values <- list()
+  
   # Store first group results
   group_params[1, ] <- test_params[test_parameters]
+  
+  # Extract starting values from first group for bootstrap
+  if (!is.null(sex)) {
+    # For sex models, we'll use a combined approach - average the sex-specific parameters
+    group_start_values[[group_levels[1]]] <- list(
+      Linf = mean(c(test_params[paste0("Linf_", levels(sex))]), na.rm = TRUE),
+      k = mean(c(test_params[paste0("k_", levels(sex))]), na.rm = TRUE),
+      t0 = mean(c(test_params[paste0("t0_", levels(sex))]), na.rm = TRUE),
+      cv = mean(c(test_params[paste0("CV_", levels(sex))]), na.rm = TRUE)
+    )
+  } else {
+    # For single models, use parameters directly
+    group_start_values[[group_levels[1]]] <- list(
+      Linf = test_params[["Linf"]],
+      k = test_params[["k"]],
+      t0 = test_params[["t0"]],
+      cv = test_params[["CV"]]
+    )
+  }
 
   # Fit remaining groups
   for (i in 2:length(group_levels)) {
@@ -334,6 +356,25 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
       params_i <- fit_group_model(group_age_i, group_length_i, group_sex_i)
       if (!is.null(params_i)) {
         group_params[i, ] <- params_i[test_parameters]
+        
+        # Store starting values for bootstrap
+        if (!is.null(sex)) {
+          # For sex models, average the sex-specific parameters for starting values
+          group_start_values[[group_levels[i]]] <- list(
+            Linf = mean(c(params_i[paste0("Linf_", levels(sex))]), na.rm = TRUE),
+            k = mean(c(params_i[paste0("k_", levels(sex))]), na.rm = TRUE),
+            t0 = mean(c(params_i[paste0("t0_", levels(sex))]), na.rm = TRUE),
+            cv = mean(c(params_i[paste0("CV_", levels(sex))]), na.rm = TRUE)
+          )
+        } else {
+          # For single models, use parameters directly
+          group_start_values[[group_levels[i]]] <- list(
+            Linf = params_i[["Linf"]],
+            k = params_i[["k"]],
+            t0 = params_i[["t0"]],
+            cv = params_i[["CV"]]
+          )
+        }
       }
     } else {
       warning(paste("Group", group_levels[i], "has fewer than 10 observations, skipping"))
@@ -388,7 +429,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
       perm_group <- sample(group)
     }
 
-    # Fit models to permuted groups
+    # Fit models to permuted groups using observed parameters as starting values
     perm_params <- matrix(NA, nrow = length(group_levels), ncol = length(test_parameters))
     colnames(perm_params) <- test_parameters
 
@@ -399,7 +440,9 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
       group_sex_i <- if (!is.null(sex)) sex[group_mask] else NULL
 
       if (length(group_age_i) >= 10) {
-        params_i <- fit_group_model(group_age_i, group_length_i, group_sex_i)
+        # Use starting values from the observed fit for this group (if available)
+        start_vals <- group_start_values[[group_levels[i]]]
+        params_i <- fit_group_model(group_age_i, group_length_i, group_sex_i, start_vals)
         if (!is.null(params_i)) {
           perm_params[i, ] <- params_i[test_parameters]
         }

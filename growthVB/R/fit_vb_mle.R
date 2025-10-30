@@ -12,6 +12,8 @@
 #' @param ci_level Confidence interval level (default 0.95)
 #' @param optim_method Optimisation method for stats::optim (default "L-BFGS-B")
 #' @param maxit Maximum number of iterations for optimisation (default 1000)
+#' @param start_values Optional named vector of starting values for parameters.
+#'   Should include Linf, k, t0, and cv. If NULL, starting values are estimated from data.
 #'
 #' @return A list containing:
 #'   \item{parameters}{Estimated parameters with confidence intervals}
@@ -41,7 +43,7 @@
 #' @export
 fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
                        sampling_prob = 1, ci_level = 0.95,
-                       optim_method = "L-BFGS-B", maxit = 1000) {
+                       optim_method = "L-BFGS-B", maxit = 1000, start_values = NULL) {
   # Create data frame for analysis with original order index
   data <- data.frame(
     ID = seq_along(age),  # Add unique identifier preserving original order
@@ -66,22 +68,32 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
 
   # Function to fit a model to a subset of the data using maximum likelihood
   fit_model <- function(subset_data) {
-    # Better initial parameter estimates based on data
-    Linf_init <- max(subset_data$length, na.rm = TRUE) * 1.1 # Slightly above max observed length
-
-    # Estimate k from growth rate - use simple linear approximation
-    if (nrow(subset_data) > 1) {
-      # Simple linear model to get rough k estimate
-      lm_rough <- lm(log(Linf_init - subset_data$length + 1) ~ subset_data$age)
-      k_init <- max(0.05, min(2.0, -coef(lm_rough)[2])) # Bound k between 0.05 and 2.0
+    # Use provided starting values or estimate from data
+    if (!is.null(start_values) && is.numeric(start_values) && 
+        all(c("Linf", "k", "t0", "cv") %in% names(start_values))) {
+      # Use provided starting values
+      Linf_init <- start_values[["Linf"]]
+      k_init <- start_values[["k"]]
+      t0_init <- start_values[["t0"]]
+      cv_init <- start_values[["cv"]]
     } else {
-      k_init <- 0.2
+      # Better initial parameter estimates based on data
+      Linf_init <- max(subset_data$length, na.rm = TRUE) * 1.1 # Slightly above max observed length
+
+      # Estimate k from growth rate - use simple linear approximation
+      if (nrow(subset_data) > 1) {
+        # Simple linear model to get rough k estimate
+        lm_rough <- lm(log(Linf_init - subset_data$length + 1) ~ subset_data$age)
+        k_init <- max(0.05, min(2.0, -coef(lm_rough)[2])) # Bound k between 0.05 and 2.0
+      } else {
+        k_init <- 0.2
+      }
+
+      # Estimate t0 from intercept or use reasonable default
+      t0_init <- min(subset_data$age) - 1 # Set t0 to be before the youngest age
+
+      cv_init <- 0.15 # Initial coefficient of variation
     }
-
-    # Estimate t0 from intercept or use reasonable default
-    t0_init <- min(subset_data$age) - 1 # Set t0 to be before the youngest age
-
-    cv_init <- 0.15 # Initial coefficient of variation
 
     # Negative log-likelihood function with CV as a function of predicted length
     neg_log_likelihood <- function(params) {

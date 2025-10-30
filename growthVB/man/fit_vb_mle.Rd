@@ -12,7 +12,8 @@ fit_vb_mle(
   sampling_prob = 1,
   ci_level = 0.95,
   optim_method = "L-BFGS-B",
-  maxit = 1000
+  maxit = 1000,
+  start_values = NULL
 )
 }
 \arguments{
@@ -31,6 +32,9 @@ fit_vb_mle(
 \item{optim_method}{Optimisation method for stats::optim (default "L-BFGS-B")}
 
 \item{maxit}{Maximum number of iterations for optimisation (default 1000)}
+
+\item{start_values}{Optional named vector of starting values for parameters.
+Should include Linf, k, t0, and cv. If NULL, starting values are estimated from data.}
 }
 \value{
 A list containing:

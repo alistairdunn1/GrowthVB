@@ -27,7 +27,7 @@ the same detailed output. For more control over formatting, use
 \dontrun{
 # After running compare_vb_mle
 result <- compare_vb_mle(age, length, group)
-print(result)  # or simply: result
+print(result) # or simply: result
 }
 
 }

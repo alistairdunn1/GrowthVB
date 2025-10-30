@@ -23,11 +23,11 @@ von Bertalanffy growth parameter comparisons between groups.
 \details{
 The summary provides:
 \itemize{
-  \item Test method and configuration details
-  \item Sample sizes and group information
-  \item Parameter estimates for each group
-  \item Statistical test results with p-values and significance
-  \item Growth curve comparison results (if performed)
+\item Test method and configuration details
+\item Sample sizes and group information
+\item Parameter estimates for each group
+\item Statistical test results with p-values and significance
+\item Growth curve comparison results (if performed)
 }
 }
 \examples{

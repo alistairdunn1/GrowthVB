@@ -16,7 +16,9 @@ compare_vb_mle(
   seed = NULL,
   min_obs = 50,
   age_stratified = TRUE,
-  age_bin_width = 2
+  age_bin_width = 2,
+  test_curves = TRUE,
+  curve_ages = NULL
 )
 }
 \arguments{
@@ -47,6 +49,12 @@ When TRUE, permutations are performed within age bins to maintain age distributi
 
 \item{age_bin_width}{Width of age bins in years for stratified permutation (default 2).
 Only used when age_stratified = TRUE. Each bin will span this many years.}
+
+\item{test_curves}{Logical, whether to test for differences in growth curves (default TRUE).
+This performs a permutation test on the maximum absolute deviance between fitted curves}
+
+\item{curve_ages}{Optional numeric vector of ages at which to evaluate curves for comparison.
+If NULL, uses a sequence from min to max age with 0.5 year increments}
 }
 \value{
 A list containing:
@@ -59,9 +67,6 @@ A list containing:
 \item \code{curve_comparison}: Results from growth curve comparison test (if test_curves = TRUE)
 \item \code{method_info}: Information about the test method and settings
 }
-
-The returned object has class \code{vb_comparison} and can be summarised using
-\code{summary()} or \code{print()} methods for comprehensive formatted output.
 }
 \description{
 This function performs a bootstrap permutation test to evaluate whether von Bertalanffy
@@ -123,12 +128,6 @@ result_sex <- compare_vb_mle(
 print(result$p_values)
 print(result$significant)
 print(result$group_parameters)
-
-# Use summary method for comprehensive formatted output
-summary(result)
-
-# Or simply print the object
-result
 }
 
 }

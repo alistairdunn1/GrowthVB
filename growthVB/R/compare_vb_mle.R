@@ -969,3 +969,209 @@ summary.vb_comparison <- function(object, digits = 4, ...) {
 print.vb_comparison <- function(x, ...) {
   summary.vb_comparison(x, ...)
 }
+
+#' Plot Permutation Test Results for Von Bertalanffy Growth Parameter Comparison
+#'
+#' Creates density plots showing the null distributions from bootstrap permutation
+#' tests with observed test statistics overlaid. This visualisation helps assess
+#' the significance of parameter differences and curve comparisons.
+#'
+#' @param x A \code{vb_comparison} object returned by \code{compare_vb_mle}
+#' @param parameters Character vector of parameters to plot. If NULL, plots all tested parameters.
+#'   For sex models, use sex-specific names (e.g., "Linf_M", "Linf_F")
+#' @param include_curves Logical, whether to include curve comparison plot (default TRUE if available)
+#' @param ncol Number of columns for plot layout (default 2)
+#' @param alpha Transparency for density plots (default 0.5)
+#' @param observed_colour Colour for observed test statistic line (default "red")
+#' @param observed_size Line width for observed test statistic (default 1)
+#' @param title_size Font size for plot titles (default 11)
+#' @param ... Additional arguments passed to plotting functions
+#'
+#' @details
+#' The function creates:
+#' \itemize{
+#'   \item Density plots of null distributions for each parameter
+#'   \item Vertical lines showing observed test statistics
+#'   \item P-values and significance indicators in plot titles
+#'   \item Optional curve comparison plot (if test_curves was TRUE)
+#' }
+#'
+#' For sex-specific models, separate plots are created for each sex's parameters.
+#' The null distribution represents the expected range of differences under the
+#' hypothesis of no group differences. Observed statistics falling in the tail
+#' regions indicate significant differences.
+#'
+#' @return A ggplot object (single plot) or list of ggplot objects (multiple plots)
+#'
+#' @examples
+#' \dontrun{
+#' # After running compare_vb_mle
+#' result <- compare_vb_mle(age, length, group, n_bootstrap = 500)
+#' 
+#' # Plot all parameters
+#' plot(result)
+#' 
+#' # Plot specific parameters
+#' plot(result, parameters = c("Linf", "k"))
+#' 
+#' # Plot without curve comparison
+#' plot(result, include_curves = FALSE)
+#' 
+#' # Customise appearance
+#' plot(result, observed_colour = "blue", alpha = 0.5, ncol = 3)
+#' }
+#'
+#' @export
+plot.vb_comparison <- function(x, parameters = NULL, include_curves = TRUE, 
+                              ncol = 2, alpha = 0.5, observed_colour = "red",
+                              observed_size = 1.0, title_size = 11, ...) {
+  
+  # Check if ggplot2 is available
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 is required for plotting. Please install it with: install.packages('ggplot2')")
+  }
+  
+  # Check if gridExtra is available for multi-panel plots
+  if (!requireNamespace("gridExtra", quietly = TRUE)) {
+    stop("gridExtra is required for multi-panel plotting. Please install it with: install.packages('gridExtra')")
+  }
+  
+  # Check if grid is available
+  if (!requireNamespace("grid", quietly = TRUE)) {
+    stop("grid is required for plotting. Please install it with: install.packages('grid')")
+  }
+  
+  # Determine which parameters to plot
+  available_params <- names(x$observed_diffs)[!is.na(x$observed_diffs)]
+  if (is.null(parameters)) {
+    parameters <- available_params
+  } else {
+    # Check that requested parameters are available
+    missing_params <- setdiff(parameters, available_params)
+    if (length(missing_params) > 0) {
+      warning("Parameters not found or have NA values: ", paste(missing_params, collapse = ", "))
+      parameters <- intersect(parameters, available_params)
+    }
+  }
+  
+  if (length(parameters) == 0) {
+    stop("No valid parameters available for plotting")
+  }
+  
+  # Create list to store plots
+  plot_list <- list()
+  
+  # Create parameter plots
+  for (param in parameters) {
+    # Extract null distribution and observed value
+    null_dist <- x$null_distributions[, param]
+    null_dist <- null_dist[!is.na(null_dist)]
+    observed <- x$observed_diffs[param]
+    p_value <- x$p_values[param]
+    is_significant <- x$significant[param]
+    
+    if (length(null_dist) == 0) {
+      warning("No valid null distribution data for parameter: ", param)
+      next
+    }
+    
+    # Create data frame for plotting
+    plot_data <- data.frame(
+      value = null_dist,
+      type = "Null Distribution"
+    )
+    
+    # Create significance indicator
+    sig_indicator <- ifelse(is_significant, " *", "")
+    
+    # Create the plot
+    p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = value)) +
+      ggplot2::geom_density(alpha = alpha, fill = "lightblue", colour = "darkblue") +
+      ggplot2::geom_vline(xintercept = observed, colour = observed_colour, 
+                         linewidth = observed_size, linetype = "solid") +
+      ggplot2::labs(
+        title = paste0(param, ": p = ", sprintf("%.4f", p_value), sig_indicator),
+        x = "Test Statistic (Maximum Difference)",
+        y = "Density"
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = title_size, hjust = 0.5),
+        axis.title = ggplot2::element_text(size = 10),
+        axis.text = ggplot2::element_text(size = 9)
+      ) +
+      ggplot2::annotate("text", x = observed, y = 0, 
+                       label = paste("Observed:", round(observed, 3)), 
+                       hjust = -0.1, vjust = -0.5, size = 3, colour = observed_colour)
+    
+    plot_list[[param]] <- p
+  }
+  
+  # Add curve comparison plot if requested and available
+  if (include_curves && !is.null(x$curve_comparison)) {
+    curve_res <- x$curve_comparison
+    
+    # Extract null distribution and observed value for curves
+    null_curve_dist <- curve_res$null_deviances
+    null_curve_dist <- null_curve_dist[!is.na(null_curve_dist)]
+    observed_curve <- curve_res$observed_deviance$overall
+    curve_p_value <- curve_res$p_value
+    curve_significant <- curve_res$significant
+    
+    if (length(null_curve_dist) > 0) {
+      # Create data frame for curve plotting
+      curve_plot_data <- data.frame(
+        value = null_curve_dist,
+        type = "Null Distribution"
+      )
+      
+      # Create significance indicator
+      curve_sig_indicator <- ifelse(curve_significant, " *", "")
+      
+      # Create the curve plot
+      curve_plot <- ggplot2::ggplot(curve_plot_data, ggplot2::aes(x = value)) +
+        ggplot2::geom_density(alpha = alpha, fill = "lightgreen", colour = "darkgreen") +
+        ggplot2::geom_vline(xintercept = observed_curve, colour = observed_colour, 
+                           linewidth = observed_size, linetype = "solid") +
+        ggplot2::labs(
+          title = paste0("Growth Curves: p = ", sprintf("%.4f", curve_p_value), curve_sig_indicator),
+          x = "Maximum Curve Deviance",
+          y = "Density"
+        ) +
+        ggplot2::theme(
+          plot.title = ggplot2::element_text(size = title_size, hjust = 0.5),
+          axis.title = ggplot2::element_text(size = 10),
+          axis.text = ggplot2::element_text(size = 9)
+        ) +
+        ggplot2::annotate("text", x = observed_curve, y = 0, 
+                         label = paste("Observed:", round(observed_curve, 3)), 
+                         hjust = -0.1, vjust = -0.5, size = 3, colour = observed_colour)
+      
+      plot_list[["Growth_Curves"]] <- curve_plot
+    }
+  }
+  
+  # Handle single plot vs multiple plots
+  if (length(plot_list) == 1) {
+    return(plot_list[[1]])
+  } else {
+    # Calculate number of rows needed
+    nrow <- ceiling(length(plot_list) / ncol)
+    
+    # Create combined plot
+    combined_plot <- gridExtra::grid.arrange(grobs = plot_list, ncol = ncol, nrow = nrow)
+    
+    # Add overall title
+    title_grob <- grid::textGrob(
+      "Bootstrap Permutation Test Results", 
+      gp = grid::gpar(fontsize = 14, fontface = "bold")
+    )
+    
+    final_plot <- gridExtra::grid.arrange(
+      title_grob, combined_plot, 
+      heights = grid::unit(c(0.1, 0.9), "npc")
+    )
+    
+    return(final_plot)
+  }
+}

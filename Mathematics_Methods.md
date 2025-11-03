@@ -285,17 +285,68 @@ Each sex-specific parameter is tested independently, allowing detection of sex-s
 
 To improve computational efficiency, observed parameter estimates are used as starting values for bootstrap iterations, significantly reducing convergence time whilst maintaining estimation accuracy.
 
-## 10. Implementation in the growthVB Package
+### 9.2 Growth Curve Comparison
+
+Beyond individual parameter comparisons, the method also tests for differences in overall growth trajectories using maximum absolute deviance:
+
+$$D = \max_{a \in A} |f_1(a) - f_2(a)|$$
+
+Where:
+- $f_1(a)$ and $f_2(a)$ are the fitted von Bertalanffy curves for groups 1 and 2 at age $a$
+- $A$ is the set of evaluation ages (typically from minimum to maximum observed age)
+
+This metric captures overall curve differences that might not be detected by individual parameter tests.
+
+#### 9.2.1 Age-Stratified Permutation
+
+To ensure valid statistical tests, permutations are performed within age bins rather than completely random permutations. This approach:
+
+1. Preserves the age distribution within each group
+2. Tests growth parameter differences rather than age distribution differences
+3. Maintains the validity of the permutation test
+
+Age bins are created using a specified width (default 2 years), and group labels are permuted only within each age bin.
+
+## 10. Statistical Comparison Theory
+
+### 10.1 Bootstrap Permutation Test Framework
+
+The bootstrap permutation test implemented in `compare_vb_mle()` follows these steps:
+
+1. **Null Hypothesis**: $H_0$: No difference in growth parameters between groups
+2. **Test Statistic**: Maximum pairwise difference for each parameter across groups
+3. **Permutation**: Randomly reassign group labels whilst preserving age structure
+4. **Bootstrap**: Repeat permutation $B$ times to generate null distribution
+5. **P-value**: Proportion of permuted statistics $\geq$ observed statistic
+
+### 10.2 Multiple Group Comparisons
+
+For $G$ groups, the test statistic for parameter $\theta$ is:
+
+$$T_\theta = \max_{i,j \in \{1,...,G\}} |\hat{\theta}_i - \hat{\theta}_j|$$
+
+This captures the maximum difference between any pair of groups for each parameter.
+
+### 10.3 Type I Error Control
+
+The age-stratified permutation approach controls Type I error by ensuring that:
+- Age distributions remain comparable between groups under the null hypothesis
+- Tests focus on growth differences rather than sampling differences
+- Permutation preserves the dependence structure of the data
+
+## 11. Implementation in the growthVB Package
 
 The `growthVB` package implements these methods with the following core functions:
 
 1. `fit_vb_mle()`: Frequentist MLE estimation with optional heteroscedasticity modelling
 2. `fit_vb_brms()`: Bayesian estimation using the brms package with Stan backend
 3. `compare_vb_mle()`: Bootstrap permutation testing for comparing growth parameters between groups
-4. `plot_vb_predictions()`: Visualising model fit with confidence/credible intervals
-5. `plot_vb_posteriors()`: Diagnostic plots for Bayesian models including posterior distributions and correlations
+4. `summary.vb_comparison()`: Professional formatted output for comparison results
+5. `plot.vb_comparison()`: Visualisation of bootstrap permutation test results
+6. `plot_vb_predictions()`: Visualising model fit with confidence/credible intervals
+7. `plot_vb_posteriors()`: Diagnostic plots for Bayesian models including posterior distributions and correlations
 
-## 11. References
+## 12. References
 
 1. von Bertalanffy, L. (1938). A quantitative theory of organic growth. Human Biology, 10(2), 181-213.
 2. Katsanevakis, S. (2006). Modelling fish growth: Model selection, multi-model inference and model selection uncertainty. Fisheries Research, 81(2-3), 229-235.

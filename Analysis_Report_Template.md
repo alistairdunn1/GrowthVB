@@ -237,7 +237,12 @@ diagnostics$residuals_vs_age     # Residuals vs age
 
 *[Include this section if comparing growth between multiple groups/populations]*
 
-**Bootstrap permutation test results:**
+**Bootstrap permutation test approach:**
+- Statistical method: Bootstrap permutation testing
+- Permutations: [n] iterations  
+- Age-stratified: [Yes/No] with [n]-year bins
+- Parameters tested: [list parameters]
+- Growth curve testing: [Yes/No]
 
 ```r
 # Compare growth parameters between groups
@@ -249,22 +254,40 @@ group_comparison <- compare_vb_mle(
   min_obs = 50,          # Minimum observations per group
   age_stratified = TRUE, # Preserve age distributions
   age_bin_width = 2,     # 2-year age bins
+  test_curves = TRUE,    # Test overall growth curves
   seed = 123
 )
 
-# View statistical test results  
-print(group_comparison$p_values)
-print(group_comparison$significant)
+# Professional formatted summary
+summary(group_comparison)
+
+# Visualise permutation test results
+plot(group_comparison)
+
+# Plot specific parameters
+plot(group_comparison, parameters = c("Linf", "k"))
 ```
+
+**Overall test results:**
+- Total observations: [n]
+- Groups compared: [list groups]
+- Group sizes: [list sizes]
+- Significant parameters: [n] of [total]
+- Growth curve difference: [Significant/Not significant]
 
 **Parameter comparison table:**
 
-| Parameter | Group A | Group B | Difference | P-value | Significant |
-| --------- | ------- | ------- | ---------- | ------- | ----------- |
-| L∞        | [value] | [value] | [value]    | [value] | [Yes/No]    |
-| k         | [value] | [value] | [value]    | [value] | [Yes/No]    |
-| t₀        | [value] | [value] | [value]    | [value] | [Yes/No]    |
-| CV        | [value] | [value] | [value]    | [value] | [Yes/No]    |
+| Parameter | Group A | Group B | Observed Difference | P-value | Significant |
+| --------- | ------- | ------- | ------------------ | ------- | ----------- |
+| L∞        | [value] | [value] | [value]            | [value] | [Yes/No]    |
+| k         | [value] | [value] | [value]            | [value] | [Yes/No]    |
+| t₀        | [value] | [value] | [value]            | [value] | [Yes/No]    |
+| CV        | [value] | [value] | [value]            | [value] | [Yes/No]    |
+
+**Growth curve comparison:**
+- Maximum curve deviance: [value]
+- Curve p-value: [value]  
+- Interpretation: [Growth trajectories are/are not significantly different]
 
 *[Discuss the biological significance of any detected differences]*
 

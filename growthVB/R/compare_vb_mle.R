@@ -105,7 +105,7 @@
 #'   age = age, length = length, group = group,
 #'   curve_method = "rmse", n_bootstrap = 500, seed = 123
 #' )
-#' 
+#'
 #' result_area <- compare_vb_mle(
 #'   age = age, length = length, group = group,
 #'   curve_method = "area", n_bootstrap = 500, seed = 123
@@ -122,7 +122,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
                            parameters = c("Linf", "k", "t0", "CV"),
                            alpha = 0.05, verbose = TRUE, seed = NULL, min_obs = 50,
                            age_stratified = TRUE, age_bin_width = 2,
-                           test_curves = TRUE, curve_ages = NULL, 
+                           test_curves = TRUE, curve_ages = NULL,
                            curve_method = "max_abs") {
   # Set seed for reproducibility if provided
   if (!is.null(seed)) {
@@ -393,14 +393,14 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
   calc_pairwise_deviance <- function(group_curves, eval_ages, method = "max_abs") {
     n_groups <- nrow(group_curves)
     max_deviance <- 0
-    
+
     if (sum(complete.cases(group_curves)) >= 2) {
       for (i in 1:(n_groups - 1)) {
         for (j in (i + 1):n_groups) {
           if (!any(is.na(group_curves[i, ])) && !any(is.na(group_curves[j, ]))) {
             curve1 <- group_curves[i, ]
             curve2 <- group_curves[j, ]
-            
+
             # Calculate deviance based on method
             deviance_ij <- switch(method,
               "max_abs" = max(abs(curve1 - curve2)),
@@ -411,7 +411,7 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
               },
               "weighted" = {
                 # Weight by inverse age (more importance to early growth)
-                weights <- 1 / pmax(eval_ages, 0.5)  # Avoid division by zero
+                weights <- 1 / pmax(eval_ages, 0.5) # Avoid division by zero
                 sum(weights * abs(curve1 - curve2)) / sum(weights)
               },
               "integrated" = {
@@ -424,15 +424,15 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
                   abs(curve1 - curve2)
                 }
               },
-              max(abs(curve1 - curve2))  # Default to max_abs
+              max(abs(curve1 - curve2)) # Default to max_abs
             )
-            
+
             max_deviance <- max(max_deviance, deviance_ij)
           }
         }
       }
     }
-    
+
     return(max_deviance)
   }
 
@@ -594,12 +594,14 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
   # Bootstrap permutation test (combined for both parameters and curves)
   null_diffs <- matrix(NA, nrow = n_bootstrap, ncol = length(test_parameters))
   colnames(null_diffs) <- test_parameters
-  
+
   # Initialize curve deviance storage if testing curves
   null_curve_deviances <- if (test_curves) numeric(n_bootstrap) else NULL
   null_curve_deviances_by_sex <- if (test_curves && !is.null(sex)) {
     matrix(NA, nrow = n_bootstrap, ncol = length(sex_levels_for_curves))
-  } else NULL
+  } else {
+    NULL
+  }
   if (!is.null(null_curve_deviances_by_sex)) {
     colnames(null_curve_deviances_by_sex) <- sex_levels_for_curves
   }
@@ -648,12 +650,12 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     # Calculate parameter differences for this permutation
     perm_diffs <- calc_max_diff(perm_params)
     null_diffs[b, ] <- perm_diffs[test_parameters]
-    
+
     # Calculate curve deviances for this permutation (if testing curves)
     if (test_curves) {
       perm_curve_deviance <- calc_curve_deviance(perm_params, curve_ages, sex_levels_for_curves, curve_method)
       null_curve_deviances[b] <- perm_curve_deviance$overall
-      
+
       if (!is.null(sex)) {
         for (sex_level in sex_levels_for_curves) {
           null_curve_deviances_by_sex[b, sex_level] <- perm_curve_deviance$by_sex[[sex_level]]
@@ -1038,40 +1040,39 @@ print.vb_comparison <- function(x, ...) {
 #' \dontrun{
 #' # After running compare_vb_mle
 #' result <- compare_vb_mle(age, length, group, n_bootstrap = 500)
-#' 
+#'
 #' # Plot all parameters
 #' plot(result)
-#' 
+#'
 #' # Plot specific parameters
 #' plot(result, parameters = c("Linf", "k"))
-#' 
+#'
 #' # Plot without curve comparison
 #' plot(result, include_curves = FALSE)
-#' 
+#'
 #' # Customise appearance
 #' plot(result, observed_colour = "blue", alpha = 0.5, ncol = 3)
 #' }
 #'
 #' @export
-plot.vb_comparison <- function(x, parameters = NULL, include_curves = TRUE, 
-                              ncol = 2, alpha = 0.5, observed_colour = "red",
-                              observed_size = 1.0, title_size = 11, ...) {
-  
+plot.vb_comparison <- function(x, parameters = NULL, include_curves = TRUE,
+                               ncol = 2, alpha = 0.5, observed_colour = "red",
+                               observed_size = 1.0, title_size = 11, ...) {
   # Check if ggplot2 is available
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 is required for plotting. Please install it with: install.packages('ggplot2')")
   }
-  
+
   # Check if gridExtra is available for multi-panel plots
   if (!requireNamespace("gridExtra", quietly = TRUE)) {
     stop("gridExtra is required for multi-panel plotting. Please install it with: install.packages('gridExtra')")
   }
-  
+
   # Check if grid is available
   if (!requireNamespace("grid", quietly = TRUE)) {
     stop("grid is required for plotting. Please install it with: install.packages('grid')")
   }
-  
+
   # Determine which parameters to plot
   available_params <- names(x$observed_diffs)[!is.na(x$observed_diffs)]
   if (is.null(parameters)) {
@@ -1084,14 +1085,14 @@ plot.vb_comparison <- function(x, parameters = NULL, include_curves = TRUE,
       parameters <- intersect(parameters, available_params)
     }
   }
-  
+
   if (length(parameters) == 0) {
     stop("No valid parameters available for plotting")
   }
-  
+
   # Create list to store plots
   plot_list <- list()
-  
+
   # Create parameter plots
   for (param in parameters) {
     # Extract null distribution and observed value
@@ -1100,70 +1101,75 @@ plot.vb_comparison <- function(x, parameters = NULL, include_curves = TRUE,
     observed <- x$observed_diffs[param]
     p_value <- x$p_values[param]
     is_significant <- x$significant[param]
-    
+
     if (length(null_dist) == 0) {
       warning("No valid null distribution data for parameter: ", param)
       next
     }
-    
+
     # Create data frame for plotting
     plot_data <- data.frame(
       value = null_dist,
       type = "Null Distribution"
     )
-    
+
     # Create significance indicator
     sig_indicator <- ifelse(is_significant, " *", "")
-    
+
     # Create the plot
     p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = value)) +
       ggplot2::geom_density(alpha = alpha, fill = "lightblue", colour = "darkblue") +
-      ggplot2::geom_vline(xintercept = observed, colour = observed_colour, 
-                         linewidth = observed_size, linetype = "solid") +
+      ggplot2::geom_vline(
+        xintercept = observed, colour = observed_colour,
+        linewidth = observed_size, linetype = "solid"
+      ) +
       ggplot2::labs(
         title = paste0(param, ": p = ", sprintf("%.4f", p_value), sig_indicator),
         x = "Test Statistic (Maximum Difference)",
         y = "Density"
       ) +
-      ggplot2::theme_minimal() +
       ggplot2::theme(
         plot.title = ggplot2::element_text(size = title_size, hjust = 0.5),
         axis.title = ggplot2::element_text(size = 10),
         axis.text = ggplot2::element_text(size = 9)
       ) +
-      ggplot2::annotate("text", x = observed, y = 0, 
-                       label = paste("Observed:", round(observed, 3)), 
-                       hjust = -0.1, vjust = -0.5, size = 3, colour = observed_colour)
-    
+      ggplot2::annotate("text",
+        x = observed, y = 0,
+        label = paste("Observed:", round(observed, 3)),
+        hjust = -0.1, vjust = -0.5, size = 3, colour = observed_colour
+      )
+
     plot_list[[param]] <- p
   }
-  
+
   # Add curve comparison plot if requested and available
   if (include_curves && !is.null(x$curve_comparison)) {
     curve_res <- x$curve_comparison
-    
+
     # Extract null distribution and observed value for curves
     null_curve_dist <- curve_res$null_deviances
     null_curve_dist <- null_curve_dist[!is.na(null_curve_dist)]
     observed_curve <- curve_res$observed_deviance$overall
     curve_p_value <- curve_res$p_value
     curve_significant <- curve_res$significant
-    
+
     if (length(null_curve_dist) > 0) {
       # Create data frame for curve plotting
       curve_plot_data <- data.frame(
         value = null_curve_dist,
         type = "Null Distribution"
       )
-      
+
       # Create significance indicator
       curve_sig_indicator <- ifelse(curve_significant, " *", "")
-      
+
       # Create the curve plot
       curve_plot <- ggplot2::ggplot(curve_plot_data, ggplot2::aes(x = value)) +
         ggplot2::geom_density(alpha = alpha, fill = "lightgreen", colour = "darkgreen") +
-        ggplot2::geom_vline(xintercept = observed_curve, colour = observed_colour, 
-                           linewidth = observed_size, linetype = "solid") +
+        ggplot2::geom_vline(
+          xintercept = observed_curve, colour = observed_colour,
+          linewidth = observed_size, linetype = "solid"
+        ) +
         ggplot2::labs(
           title = paste0("Growth Curves: p = ", sprintf("%.4f", curve_p_value), curve_sig_indicator),
           x = "Maximum Curve Deviance",
@@ -1174,35 +1180,37 @@ plot.vb_comparison <- function(x, parameters = NULL, include_curves = TRUE,
           axis.title = ggplot2::element_text(size = 10),
           axis.text = ggplot2::element_text(size = 9)
         ) +
-        ggplot2::annotate("text", x = observed_curve, y = 0, 
-                         label = paste("Observed:", round(observed_curve, 3)), 
-                         hjust = -0.1, vjust = -0.5, size = 3, colour = observed_colour)
-      
+        ggplot2::annotate("text",
+          x = observed_curve, y = 0,
+          label = paste("Observed:", round(observed_curve, 3)),
+          hjust = -0.1, vjust = -0.5, size = 3, colour = observed_colour
+        )
+
       plot_list[["Growth_Curves"]] <- curve_plot
     }
   }
-  
+
   # Handle single plot vs multiple plots
   if (length(plot_list) == 1) {
     return(plot_list[[1]])
   } else {
     # Calculate number of rows needed
     nrow <- ceiling(length(plot_list) / ncol)
-    
+
     # Create combined plot
     combined_plot <- gridExtra::grid.arrange(grobs = plot_list, ncol = ncol, nrow = nrow)
-    
+
     # Add overall title
     title_grob <- grid::textGrob(
-      "Bootstrap Permutation Test Results", 
+      "Bootstrap Permutation Test Results",
       gp = grid::gpar(fontsize = 14, fontface = "bold")
     )
-    
+
     final_plot <- gridExtra::grid.arrange(
-      title_grob, combined_plot, 
+      title_grob, combined_plot,
       heights = grid::unit(c(0.1, 0.9), "npc")
     )
-    
+
     return(final_plot)
   }
 }

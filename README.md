@@ -1,37 +1,34 @@
 # growthVB: Von Bertalanffy Growth Curve Estimation for R
 
-`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides maximum likelihood estimation (MLE) and Bayesian (brms) approaches, with comprehensive statistical testing, visualisation tools, and professional output methods.
+`growthVB` is an R package for estimating von Bertalanffy growth curves from age and length data. It provides maximum likelihood estimation (MLE) and Bayesian (brms) approaches, with statistical testing, visualisation tools, and output methods.
 
 **Current Version:** 0.2.0
 
 ## Installation
 
 ```r
-# Install directly from GitHub (recommended)
+# Install from GitHub
 devtools::install_github("alistairdunn1/growthVB", subdir = "growthVB")
 
-# Or install from a local directory (from the root directory containing growthVB folder)
-# install.packages("growthVB", repos = NULL, type = "source")
+# Or install from local directory
+install.packages("growthVB", repos = NULL, type = "source")
 
-# Or if you're in a different directory, specify the full path
-# install.packages("path/to/GrowthVB/growthVB", repos = NULL, type = "source")
-
-# To build the package from source, run:
-# Rscript build_package.R
+# Build from source
+Rscript build_package.R
 ```
 
 ## Features
 
-- **Standard von Bertalanffy models**: Fit growth curves using maximum likelihood estimation (MLE) or Bayesian methods (brms)
-- **Heteroscedasticity modelling**: Explicitly model CV as a function of predicted length
-- **Sex-specific growth modelling**: Separate parameters by sex with proper statistical treatment
+- **Standard von Bertalanffy models**: Fit growth curves using MLE or Bayesian methods (brms)
+- **Heteroscedasticity modelling**: Model CV as a function of predicted length
+- **Sex-specific growth modelling**: Separate parameters by sex
 - **Length bin sampling corrections**: Account for stratified sampling designs
-- **Parameter estimation**: 95% confidence/credible intervals for all parameters
+- **Parameter estimation**: 95% confidence/credible intervals
 - **Diagnostics**: Residual analysis, posterior predictive checks, empirical CV analysis
-- **Growth curve comparison**: Test differences in overall growth trajectories between groups
-- **Comprehensive visualisation**: Density plots showing bootstrap permutation distributions
-- **Summary and print methods**: Professional formatted output for results
-- **Complete documentation**: Detailed help with examples for all functionality
+- **Growth curve comparison**: Test differences in growth trajectories between groups
+- **Visualisation**: Density plots showing bootstrap permutation distributions
+- **Summary and print methods**: Formatted output for results
+- **Documentation**: Help with examples for all functionality
 
 ## Core Functions
 
@@ -54,12 +51,12 @@ fit_vb_mle(
 
 **Features:**
 
-- **Maximum likelihood estimation**: Uses direct optimisation for flexible parameter estimation
+- **Maximum likelihood estimation**: Uses optimisation for parameter estimation
 - **Sex-specific modelling**: When `sex` is provided, fits separate growth curves for each sex
-- **CV modelling**: Explicitly models coefficient of variation as a function of mean length
+- **CV modelling**: Models coefficient of variation as a function of mean length
 - **Heteroscedastic variance**: Accounts for increasing variance with fish length
-- **Parameter uncertainty**: Provides standard errors and confidence intervals for all parameters
-- **Robust fitting**: Uses bounded optimisation (L-BFGS-B) with intelligent starting values for reliable parameter estimation and confidence intervals
+- **Parameter uncertainty**: Provides standard errors and confidence intervals
+- **Fitting**: Uses bounded optimisation (L-BFGS-B) with starting values
 
 #### `fit_vb_brms()`: Bayesian Von Bertalanffy Model Fitting
 
@@ -83,12 +80,12 @@ fit_vb_brms(
 
 **Features:**
 
-- **Full Bayesian inference**: Posterior distributions for all parameters
+- **Bayesian inference**: Posterior distributions for all parameters
 - **Sex-specific modelling**: When `sex` is provided, fits separate growth parameters for each sex
 - **Length bin sampling**: Corrects for length-stratified sampling through weighting
 - **CV modelling**: Models heteroscedasticity where variance increases with fish size
-- **Prior specification**: Flexible prior definition for all parameters
-- **MCMC control**: Fine-grained control of sampling behaviour
+- **Prior specification**: Prior definition for all parameters
+- **MCMC control**: Control of sampling behaviour
 
 #### Analysis
 
@@ -99,7 +96,7 @@ fit_vb_brms(
 Both `fit_vb_mle()` and `fit_vb_brms()` return list objects containing:
 
 - **`parameters`**: Parameter estimates with standard errors/credible intervals
-- **`data`**: Original data enhanced with analysis results, including:
+- **`data`**: Original data with analysis results, including:
   - `ID`: Unique identifier preserving original input order (1, 2, 3, ...)
   - `age`: Original age values
   - `length`: Original length values
@@ -157,26 +154,26 @@ compare_vb_mle(
 
 ## Key Enhancements in Version 0.2.0
 
-### Enhanced Statistical Testing
+### Statistical Testing
 
-- **Bootstrap Permutation Tests**: Robust non-parametric testing framework for comparing growth parameters between groups
-- **Age-Stratified Permutation**: Maintains age distributions during permutation to ensure valid statistical tests
-- **Growth Curve Comparison**: Tests differences in overall growth trajectories using maximum absolute deviance
-- **Sex-Specific Model Support**: Handles complex comparisons of sex-specific growth parameters
-- **Comprehensive Filtering**: Automatic removal of groups/sex combinations with insufficient data
+- **Bootstrap Permutation Tests**: Non-parametric testing framework for comparing growth parameters between groups
+- **Age-Stratified Permutation**: Maintains age distributions during permutation for statistical tests
+- **Growth Curve Comparison**: Tests differences in growth trajectories using maximum absolute deviance
+- **Sex-Specific Model Support**: Handles comparisons of sex-specific growth parameters
+- **Filtering**: Removal of groups/sex combinations with insufficient data
 
-### Professional Output and Visualisation
+### Output and Visualisation
 
-- **Summary Methods**: Professional formatted reports with statistical test results and method information
+- **Summary Methods**: Formatted reports with statistical test results and method information
 - **Density Plot Visualisation**: Shows bootstrap null distributions with observed statistics overlaid
-- **Customisable Plotting**: Full control over plot appearance, colours, and layout
-- **Comprehensive Documentation**: Detailed help with examples for all functions
+- **Plotting**: Control over plot appearance, colours, and layout
+- **Documentation**: Help with examples for functions
 
 ### Data Quality and Validation
 
-- **Robust Error Handling**: Comprehensive input validation and informative error messages
-- **Convergence Diagnostics**: Automatic detection and handling of model fitting issues
-- **Starting Value Optimisation**: Uses observed parameters as starting values for faster bootstrap convergence
+- **Error Handling**: Input validation and error messages
+- **Convergence Diagnostics**: Detection and handling of model fitting issues
+- **Starting Value Optimisation**: Uses observed parameters as starting values for bootstrap convergence
 
 ## Example Usage
 
@@ -185,7 +182,7 @@ compare_vb_mle(
 ```r
 library(growthVB)
 
-# Simple example with simulated data (heteroscedastic errors)
+# Example with simulated data (heteroscedastic errors)
 set.seed(123)
 true_Linf <- 120
 true_k <- 0.25
@@ -194,7 +191,7 @@ true_cv <- 0.1
 
 # Generate ages (multiple observations per age)
 age <- rep(1:15, each = 6)
-age <- age + rnorm(length(age), 0, 0.1)  # Add some noise
+age <- age + rnorm(length(age), 0, 0.1)  # Add noise
 
 # Generate lengths with heteroscedastic error (SD = CV * predicted length)
 mean_length <- true_Linf * (1 - exp(-true_k * (age - true_t0)))
@@ -268,7 +265,7 @@ Linf_m <- 90
 k_m <- 0.25
 t0_m <- -0.3
 
-# Common CV parameter
+# CV parameter
 cv <- 0.08
 
 # Calculate mean lengths
@@ -320,9 +317,9 @@ predictions_detailed <- predict(fit_sex, newdata = new_ages, interval = "predict
 plot_vb_predictions(predictions_detailed, original_data = fit_sex$data)
 ```
 
-### Advanced Prediction Plotting
+### Prediction Plotting
 
-The `plot_vb_predictions()` function provides comprehensive visualisation of von Bertalanffy growth predictions:
+The `plot_vb_predictions()` function provides visualisation of von Bertalanffy growth curve predictions:
 
 ```r
 # Fit a model
@@ -392,14 +389,14 @@ print(fit_uncorrected$parameters)
 
 ### `compare_vb_mle()`
 
-Compare von Bertalanffy growth parameters between groups using bootstrap permutation testing. This function evaluates whether growth parameters differ significantly between two or more groups by comparing observed differences against a null distribution generated through random permutation of group labels.
+Compare von Bertalanffy growth parameters between groups using bootstrap permutation testing. This function evaluates whether growth parameters differ between two or more groups by comparing observed differences against a null distribution generated through random permutation of group labels.
 
-**Key Features:**
+**Features:**
 
 - **Sex model support**: Works with both single and sex-specific von Bertalanffy models
 - **Data quality filtering**: Removes groups/sex combinations with insufficient observations (default minimum 50)
-- **Age-stratified permutation**: Preserves age distributions between groups for valid statistical testing (default 2-year age bins)
-- **Bootstrap optimisation**: Uses observed parameters as starting values for faster convergence
+- **Age-stratified permutation**: Preserves age distributions between groups for statistical testing (default 2-year age bins)
+- **Bootstrap optimisation**: Uses observed parameters as starting values for convergence
 
 ```r
 # Simulate data for two populations with different growth parameters
@@ -417,7 +414,7 @@ age <- c(age1, age2)
 length <- c(length1, length2)
 population <- rep(c("Pop_A", "Pop_B"), each = n_per_group)
 
-# Perform bootstrap permutation test with enhanced features
+# Perform bootstrap permutation test
 comparison <- compare_vb_mle(
   age = age, 
   length = length, 
@@ -434,7 +431,7 @@ print(comparison$p_values)
 print(comparison$significant)
 print(comparison$group_parameters)
 
-# Use summary method for comprehensive formatted output
+# Use summary method for output
 summary(comparison)
 
 # Or simply print the object (uses print method)
@@ -464,8 +461,8 @@ comparison_sex <- compare_vb_mle(
 The function returns:
 
 - **observed_diffs**: Observed differences between groups for each parameter
-- **p_values**: P-values for each parameter comparison  
-- **significant**: Logical indicating which parameters show significant differences
+- **p_values**: P-values for each parameter comparison
+- **significant**: Logical indicating which parameters show differences
 - **group_parameters**: Parameter estimates for each group
 - **null_distributions**: Bootstrap null distributions for visualisation
 - **curve_comparison**: Results from growth curve comparison test (if enabled)
@@ -473,10 +470,10 @@ The function returns:
 
 **Summary and Visualisation Methods:**
 
-The `summary()` method provides a comprehensive, formatted report including:
+The `summary()` method provides a formatted report including:
 
 - Test method and configuration details
-- Sample sizes and group information  
+- Sample sizes and group information
 - Parameter estimates for each group
 - Statistical test results with p-values and significance indicators
 - Growth curve comparison results (if performed)
@@ -508,7 +505,7 @@ The plots show:
 **Function Parameters:**
 
 - `age`, `length`, `group`: Vectors of age, length, and group classifications
-- `sex`: Optional factor for sex-specific models (expands parameters to sex-specific versions)
+- `sex`: Factor for sex-specific models (expands parameters to sex-specific versions)
 - `n_bootstrap`: Number of bootstrap permutations (default 1000)
 - `parameters`: Character vector of parameters to test (default: "Linf", "k", "t0", "CV")
 - `min_obs`: Minimum observations per group/sex combination (default 50)
@@ -516,11 +513,11 @@ The plots show:
 - `age_bin_width`: Width of age bins in years for stratification (default 2)
 - `alpha`: Significance level (default 0.05)
 - `verbose`: Whether to print progress messages (default TRUE)
-- `seed`: Optional seed for reproducible results
+- `seed`: Seed for reproducible results
 
-Parameters can be selectively tested using the `parameters` argument. For sex models, parameters are automatically expanded to sex-specific versions (e.g., "Linf_M", "Linf_F").
+Parameters can be selectively tested using the `parameters` argument. For sex models, parameters are expanded to sex-specific versions (e.g., "Linf_M", "Linf_F").
 
-### Bayesian Model
+### Bayesian Models
 
 ```r
 library(growthVB)
@@ -572,29 +569,29 @@ if (requireNamespace("brms", quietly = TRUE)) {
 
 ### Version 0.2.0 (November 2025)
 
-**Major Enhancements:**
+**Enhancements:**
 
 - **Statistical Testing Framework**: Added `compare_vb_mle()` for bootstrap permutation testing
-- **Age-Stratified Permutation**: Ensures valid statistical tests by preserving age distributions
-- **Growth Curve Comparison**: Tests overall growth trajectory differences using maximum absolute deviance
-- **Sex-Specific Model Support**: Full support for comparing sex-specific growth parameters
-- **Professional Output Methods**: Added `summary()` and `print()` methods for formatted results
+- **Age-Stratified Permutation**: Preserves age distributions for statistical tests
+- **Growth Curve Comparison**: Tests growth trajectory differences using maximum absolute deviance
+- **Sex-Specific Model Support**: Support for comparing sex-specific growth parameters
+- **Output Methods**: Added `summary()` and `print()` methods for formatted results
 - **Visualisation Framework**: Added `plot()` method for bootstrap permutation test results
-- **Enhanced Documentation**: Comprehensive help files and mathematical methodology documentation
+- **Documentation**: Help files and mathematical methodology documentation
 
 **Technical Improvements:**
 
 - Bootstrap optimisation using observed parameters as starting values
-- Robust error handling and input validation
-- Comprehensive filtering of insufficient data combinations
+- Error handling and input validation
+- Filtering of insufficient data combinations
 - British English spelling throughout (colour, visualisation, etc.)
-- Complete test coverage and validation
+- Test coverage and validation
 
 **New Functions:**
 
 - `compare_vb_mle()`: Bootstrap permutation testing for group comparisons
-- `summary.vb_comparison()`: Professional formatted output
-- `print.vb_comparison()`: Simplified output method  
+- `summary.vb_comparison()`: Formatted output
+- `print.vb_comparison()`: Simplified output method
 - `plot.vb_comparison()`: Density plot visualisation of test results
 
 ### Citation

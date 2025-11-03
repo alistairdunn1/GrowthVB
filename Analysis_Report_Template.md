@@ -2,9 +2,10 @@
 
 ## 1. Executive Summary
 
-*[Brief overview of the analysis, key findings, and conclusions in 3-5 sentences]*
+*[Overview of the analysis, key findings, and conclusions in 3-5 sentences]*
 
 **Key Results:**
+
 - Asymptotic length (L∞): [value] ± [error] [units]
 - Growth coefficient (k): [value] ± [error] [year⁻¹]
 - Age at zero length (t₀): [value] ± [error] [years]
@@ -13,9 +14,11 @@
 ## 2. Introduction
 
 ### 2.1 Study Background
+
 *[Provide context for why this analysis was conducted]*
 
 ### 2.2 Objectives
+
 *[List specific objectives of the growth analysis]*
 
 - To estimate growth parameters for [species name]
@@ -24,7 +27,8 @@
 - *[Other objectives]*
 
 ### 2.3 Species Biology
-*[Brief description of the species and relevant biological information]*
+
+*[Description of the species and relevant biological information]*
 
 ## 3. Materials and Methods
 
@@ -60,28 +64,34 @@
 ### 3.3 Statistical Analysis
 
 **Software used:**
+
 - R version [x.x.x]
 - growthVB package version [x.x.x]
 - *[Other relevant software]*
 
 **Growth models applied:**
+
 - Von Bertalanffy growth function (VBGF)
 - *[Any modified models or alternative models]*
 
 **Estimation methods:**
+
 - Maximum likelihood estimation (MLE) with heteroscedasticity
 - Bayesian estimation using BRMS
 - *[Other methods if applicable]*
 
 **Data traceability:**
+
 - ID indexing preserves original input order for data matching
 - Fitted values and residuals calculated for all observations
-- Full result traceability maintained throughout analysis
+- Result traceability maintained throughout analysis
 
 **Model assumptions:**
+
 - *[List any assumptions made in the analysis]*
 
 **Model selection criteria:**
+
 - AIC/BIC/WAIC
 - Likelihood ratio tests
 - *[Other criteria used]*
@@ -90,7 +100,7 @@
 
 ### 4.1 Data Overview
 
-```
+```r
 [Insert table summarising sample characteristics]
 ```
 
@@ -99,7 +109,7 @@
 *[Insert age frequency plot using plot_vb_age_counts(age)]*
 
 ```r
-# Basic age distribution plot
+# Age distribution plot
 plot_vb_age_counts(age = age_data)
 ```
 
@@ -146,7 +156,8 @@ plot_empirical_cv(age = age_data, length = length_data, sex = sex_data)
 
 ### 4.2 Growth Parameter Estimates
 
-**Data structure note:** Both `fit_vb_mle()` and `fit_vb_brms()` return enhanced data with:
+**Data structure note:** Both `fit_vb_mle()` and `fit_vb_brms()` return data with:
+
 - `ID`: Unique identifier preserving original input order
 - `fitted`: Model-predicted length values  
 - `residual`: Residuals (observed - fitted values)
@@ -238,6 +249,7 @@ diagnostics$residuals_vs_age     # Residuals vs age
 *[Include this section if comparing growth between multiple groups/populations]*
 
 **Bootstrap permutation test approach:**
+
 - Statistical method: Bootstrap permutation testing
 - Permutations: [n] iterations  
 - Age-stratified: [Yes/No] with [n]-year bins
@@ -254,11 +266,11 @@ group_comparison <- compare_vb_mle(
   min_obs = 50,          # Minimum observations per group
   age_stratified = TRUE, # Preserve age distributions
   age_bin_width = 2,     # 2-year age bins
-  test_curves = TRUE,    # Test overall growth curves
+  test_curves = TRUE,    # Test growth curves
   seed = 123
 )
 
-# Professional formatted summary
+# Formatted summary
 summary(group_comparison)
 
 # Visualise permutation test results
@@ -269,10 +281,11 @@ plot(group_comparison, parameters = c("Linf", "k"))
 ```
 
 **Overall test results:**
+
 - Total observations: [n]
 - Groups compared: [list groups]
 - Group sizes: [list sizes]
-- Significant parameters: [n] of [total]
+- Parameters: [n] of [total]
 - Growth curve difference: [Significant/Not significant]
 
 **Parameter comparison table:**
@@ -285,6 +298,7 @@ plot(group_comparison, parameters = c("Linf", "k"))
 | CV        | [value] | [value] | [value]            | [value] | [Yes/No]    |
 
 **Growth curve comparison:**
+
 - Maximum curve deviance: [value]
 - Curve p-value: [value]  
 - Interpretation: [Growth trajectories are/are not significantly different]
@@ -338,7 +352,7 @@ plot(group_comparison, parameters = c("Linf", "k"))
 
 ## 7. References
 
-*[List all references in appropriate citation format]*
+*[List all references in citation format]*
 
 ## Appendix A: Supplementary Figures and Tables
 

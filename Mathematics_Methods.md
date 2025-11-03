@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-The von Bertalanffy growth function (VBGF) is one of the most widely used models in fisheries science to describe the growth of individual fish. This document outlines the mathematical framework for both frequentist and Bayesian implementations of the VBGF as implemented in the `growthVB` package.
+The von Bertalanffy growth function (VBGF) is one of the most used models in fisheries science to describe the growth of individual fish. This document outlines the mathematical framework for both frequentist and Bayesian implementations of the VBGF as implemented in the `growthVB` package.
 
 ## 2. The Von Bertalanffy Growth Function
 
@@ -20,8 +20,8 @@ Where:
 
 ### 2.2 Biological Interpretation
 
-- $L_\infty$: Represents the asymptotic average length of very old fish in the population
-- $k$: Reflects how quickly the fish approaches its maximum size (higher values indicate faster growth)
+- $L_\infty$: Represents the asymptotic average length of old fish in the population
+- $k$: Reflects how the fish approaches its maximum size (higher values indicate faster growth)
 - $t_0$: Theoretical age at zero length (typically negative and has limited biological meaning)
 
 ## 3. Frequentist Implementation (Maximum Likelihood Method)
@@ -36,7 +36,7 @@ Where $\varepsilon_i \sim \mathcal{N}(0, \sigma_i^2)$ represents random error wi
 
 ### 3.2 Heteroscedasticity Modelling
 
-In fish growth data, variance often increases with fish size. We explicitly model this heteroscedasticity by specifying that the standard deviation is proportional to the expected length:
+In fish growth data, variance often increases with fish size. We model this heteroscedasticity by specifying that the standard deviation is proportional to the expected length:
 
 $$\sigma_i = \text{CV} \cdot \hat{L}_i$$
 
@@ -79,33 +79,11 @@ $$\hat{\theta}_j \pm 1.96 \times \text{SE}(\hat{\theta}_j)$$
 
 For derived quantities like predicted lengths at given ages, we use the delta method to propagate uncertainty.
 
-### 3.3 Parameter Estimation via Maximum Likelihood
-
-The likelihood function for this model is:
-
-$$L(L_\infty, k, t_0, CV | \text{data}) = \prod_{i=1}^{n} \frac{1}{CV \cdot \hat{L}_i \cdot \sqrt{2\pi}} \exp\left(-\frac{(L_i - \hat{L}_i)^2}{2 \cdot (CV \cdot \hat{L}_i)^2}\right)$$
-
-Where $\hat{L}_i = L_\infty \cdot (1 - e^{-k(t_i-t_0)})$
-
-We maximise the log-likelihood:
-
-$$\ell(L_\infty, k, t_0, CV | \text{data}) = -\sum_{i=1}^{n} \left[\log(CV \cdot \hat{L}_i) + \frac{(L_i - \hat{L}_i)^2}{2 \cdot (CV \cdot \hat{L}_i)^2} + \frac{1}{2}\log(2\pi)\right]$$
-
-This is accomplished using numerical optimisation methods such as L-BFGS-B (default) or other bounded optimisation approaches, which help ensure parameter estimates remain within realistic biological ranges.
-
-### 3.4 Confidence Intervals
-
-For the maximum likelihood approach, confidence intervals are derived using:
-
-1. **Hessian-based estimates**: The inverse of the negative Hessian matrix at the MLE provides an estimate of the variance-covariance matrix of parameters
-2. **Delta method**: For derived quantities (like predicted lengths), we propagate uncertainty using the delta method
-3. **Profile likelihood methods**: For more accurate intervals, profile likelihood can be used (computing likelihood-based confidence regions)
-
 ## 4. Bayesian Implementation (BRMS Method)
 
 ### 4.1 Model Formulation
 
-In the Bayesian approach, we specify a full probability model:
+In the Bayesian approach, we specify a probability model:
 
 $$L_i \sim \mathcal{N}(\mu_i, \sigma_i^2)$$
 $$\mu_i = L_\infty \cdot (1 - e^{-k(t_i-t_0)})$$
@@ -130,7 +108,7 @@ $$p(L_\infty, k, t_0, CV | \text{data}) \propto p(\text{data}|L_\infty, k, t_0, 
 
 ### 4.4 Credible Intervals
 
-Bayesian credible intervals are derived directly from the posterior distributions of parameters, typically using the 2.5th and 97.5th percentiles for 95% credible intervals.
+Bayesian credible intervals are derived from the posterior distributions of parameters, typically using the 2.5th and 97.5th percentiles for 95% credible intervals.
 
 ## 5. Sex-Specific Growth Models
 
@@ -144,7 +122,7 @@ For sex-specific growth analyses, separate models are fitted for each sex:
 
 ### 5.2 Combined Model with Sex Factor
 
-Alternatively, a combined model can be specified with sex as a factor:
+A combined model can be specified with sex as a factor:
 
 $$L_t = L_\infty^{sex} \cdot (1 - e^{-k^{sex}(t-t_0^{sex})})$$
 

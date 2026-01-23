@@ -160,6 +160,9 @@ fit_vb_brms <- function(age, length, sex = NULL,
   # Split data by sex if provided, otherwise fit single model
   if (!is.null(sex) && length(unique(sex[!is.na(sex)])) > 1) {
     sex_levels <- unique(sex[!is.na(sex)])
+    models_list <- list()
+    preds_list <- list()
+    data_list <- list()
 
     if (parallel_sex && length(sex_levels) > 1) {
       # Parallel processing for sex-specific models
@@ -248,17 +251,13 @@ fit_vb_brms <- function(age, length, sex = NULL,
     if (!parallel_sex) {
       message(sprintf("Fitting %d sex-specific models sequentially", length(sex_levels)))
 
-      models_list <- list()
-      preds_list <- list()
-      data_list <- list()  # To store data with fitted values and residuals
-
       for (s in sex_levels) {
         subset_data <- data[data$sex == s, ]
         model <- fit_brms_model(subset_data)
         models_list[[s]] <- model
 
         # Calculate fitted values and residuals for this sex
-        fitted_values <- fitted(model)[, "Estimate"]  # Extract fitted values
+        fitted_values <- brms::fitted(model)[, "Estimate"]  # Extract fitted values
         residuals <- subset_data$length - fitted_values
         
         # Add fitted values and residuals to subset data
@@ -276,6 +275,18 @@ fit_vb_brms <- function(age, length, sex = NULL,
         preds_df$Model <- "von Bertalanffy"
 
         preds_list[[s]] <- preds_df
+      }
+    } else {
+      # Parallel branch: compute fitted values/residuals in main process
+      for (s in sex_levels) {
+        subset_data <- data[data$sex == s, ]
+        model <- models_list[[s]]
+        fitted_values <- brms::fitted(model)[, "Estimate"]
+        residuals <- subset_data$length - fitted_values
+
+        subset_data$fitted <- fitted_values
+        subset_data$residual <- residuals
+        data_list[[s]] <- subset_data
       }
     }
 
@@ -304,7 +315,7 @@ fit_vb_brms <- function(age, length, sex = NULL,
     preds_df$Model <- "von Bertalanffy"
 
     # Calculate fitted values and residuals for the original data
-    fitted_values <- fitted(model)[, "Estimate"]  # Extract fitted values
+    fitted_values <- brms::fitted(model)[, "Estimate"]  # Extract fitted values
     residuals <- data$length - fitted_values
     
     # Add fitted values and residuals to data

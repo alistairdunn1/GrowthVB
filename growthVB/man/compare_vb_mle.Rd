@@ -18,7 +18,8 @@ compare_vb_mle(
   age_stratified = TRUE,
   age_bin_width = 2,
   test_curves = TRUE,
-  curve_ages = NULL
+  curve_ages = NULL,
+  curve_method = "max_abs"
 )
 }
 \arguments{
@@ -51,10 +52,19 @@ When TRUE, permutations are performed within age bins to maintain age distributi
 Only used when age_stratified = TRUE. Each bin will span this many years.}
 
 \item{test_curves}{Logical, whether to test for differences in growth curves (default TRUE).
-This performs a permutation test on the maximum absolute deviance between fitted curves}
+This performs a permutation test on the deviance between fitted curves}
 
 \item{curve_ages}{Optional numeric vector of ages at which to evaluate curves for comparison.
-If NULL, uses a sequence from min to max age with 0.5 year increments}
+If NULL, uses a sequence from min to max age with 1 year increments}
+
+\item{curve_method}{Method for calculating curve deviance (default "max_abs"). Options:
+\itemize{
+\item "max_abs": Maximum absolute difference between curves
+\item "rmse": Root mean square error between curves (more robust to outliers)
+\item "area": Area between curves (biologically meaningful total difference)
+\item "weighted": Weighted deviance (higher weight for younger ages)
+\item "integrated": Trapezoidal integration of absolute differences
+}}
 }
 \value{
 A list containing:
@@ -81,10 +91,14 @@ a bootstrap permutation test by:
 \item Computing observed parameter differences between groups
 \item Randomly permuting group labels n_bootstrap times (with optional age stratification)
 \item Fitting models to each permuted dataset
-\item Computing parameter differences for each permutation
+\item Computing both parameter differences and growth curve deviances for each permutation
 \item Calculating p-values as the proportion of permuted differences
 that exceed the observed differences
 }
+
+The bootstrap permutation is performed efficiently in a single loop that computes
+both parameter comparisons and growth curve comparisons (if enabled) from the same
+fitted models, avoiding redundant computation.
 
 age bins to ensure that age distributions remain comparable between groups.
 This is crucial for validity as it tests differences in growth parameters
@@ -122,6 +136,17 @@ sex <- rep(c("M", "F"), length.out = length(age))
 result_sex <- compare_vb_mle(
   age = age, length = length, group = group, sex = sex,
   n_bootstrap = 500, seed = 123
+)
+
+# Test with different curve comparison methods
+result_rmse <- compare_vb_mle(
+  age = age, length = length, group = group,
+  curve_method = "rmse", n_bootstrap = 500, seed = 123
+)
+
+result_area <- compare_vb_mle(
+  age = age, length = length, group = group,
+  curve_method = "area", n_bootstrap = 500, seed = 123
 )
 
 # View results

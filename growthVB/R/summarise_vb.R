@@ -24,7 +24,6 @@ summarise_vb <- function(model, digits = 3) {
     if ((!is.null(model$models) && is.list(model$models)) ||
       (!is.null(model$model) && is.list(model$model) && !inherits(model$model, "vb_optim"))) {
       # Sex-specific models
-      # Use models if available, otherwise use model
       sex_models <- if (!is.null(model$models)) model$models else model$model
       result <- data.frame(
         Sex = character(),
@@ -36,22 +35,19 @@ summarise_vb <- function(model, digits = 3) {
       )
 
       for (s in names(sex_models)) {
-        # Extract parameters for this sex
         for (p in c("Linf", "k", "t0", "cv")) {
-          # Get parameter name with sex prefix
           param_name <- paste0(s, "_", p)
           if (param_name %in% rownames(model$parameters)) {
             est <- model$parameters[param_name, "estimate"]
             se <- model$parameters[param_name, "std.error"]
-            lower <- est - 1.96 * se
-            upper <- est + 1.96 * se
+            ci_delta <- ifelse(!is.na(se), 1.96 * se, NA_real_)
 
             result <- rbind(result, data.frame(
               Sex = s,
               Parameter = p,
               Estimate = round(est, digits),
-              Lower = round(lower, digits),
-              Upper = round(upper, digits),
+              Lower = round(est - ci_delta, digits),
+              Upper = round(est + ci_delta, digits),
               stringsAsFactors = FALSE
             ))
           }
@@ -60,91 +56,50 @@ summarise_vb <- function(model, digits = 3) {
 
       return(result)
     } else {
-      # Single model - new MLE implementation
-      if (is.data.frame(model$parameters)) {
-        # Handle data.frame parameters format
+      params <- model$parameters
+
+      if (is.matrix(params)) {
+        est <- params[, "estimate"]
+        se <- params[, "std.error"]
+        ci_delta <- ifelse(!is.na(se), 1.96 * se, NA_real_)
+
         result <- data.frame(
-          Parameter = colnames(model$parameters),
-          Estimate = as.numeric(model$parameters[1, ]),
+          Parameter = rownames(params),
+          Estimate = round(est, digits),
+          Lower = round(est - ci_delta, digits),
+          Upper = round(est + ci_delta, digits),
+          stringsAsFactors = FALSE
+        )
+        return(result)
+      }
+
+      if (is.data.frame(params)) {
+        result <- data.frame(
+          Parameter = colnames(params),
+          Estimate = as.numeric(params[1, ]),
           Lower = NA,
           Upper = NA,
           stringsAsFactors = FALSE
         )
-
-        # Round numeric values
         num_cols <- vapply(result, is.numeric, logical(1))
         result[num_cols] <- lapply(result[num_cols], round, digits = digits)
-
         return(result)
-      } else if (is.vector(model$model$parameters) && !is.null(names(model$model$parameters))) {
-        # Handle case where parameters are in model$model$parameters as a named vector
-        params <- model$model$parameters
+      }
+
+      if (!is.null(model$model) && is.numeric(model$model$parameters)) {
+        params_vec <- model$model$parameters
         result <- data.frame(
-          Parameter = names(params),
-          Estimate = as.numeric(params),
+          Parameter = names(params_vec),
+          Estimate = round(as.numeric(params_vec), digits),
           Lower = NA,
           Upper = NA,
           stringsAsFactors = FALSE
         )
-
-        # Round numeric values
-        num_cols <- vapply(result, is.numeric, logical(1))
-        result[num_cols] <- lapply(result[num_cols], round, digits = digits)
-
         return(result)
       }
+
+      stop("Unsupported vb_mle parameter structure")
     }
-  } else if (inherits(model, "vb_mle")) {
-    # MLE model handling
-    make_row <- function(model, sex = NULL) {
-      cf <- try(stats::coef(model), silent = TRUE)
-      # Default NA CIs
-      lower <- rep(NA_real_, 3)
-      upper <- rep(NA_real_, 3)
-      nm <- c("Linf", "k", "t0")
-
-      if (!inherits(cf, "try-error")) {
-        ci <- try(stats::confint(model), silent = TRUE)
-        if (!inherits(ci, "try-error") && all(nm %in% rownames(ci))) {
-          lower <- ci[nm, 1]
-          upper <- ci[nm, 2]
-        }
-        est <- unname(cf[nm])
-      } else {
-        est <- rep(NA_real_, 3)
-      }
-
-      out <- data.frame(
-        Parameter = nm,
-        Estimate = est,
-        Lower = lower,
-        Upper = upper,
-        stringsAsFactors = FALSE
-      )
-
-      if (!is.null(sex)) out$Sex <- sex
-      return(out)
-    }
-
-    if (is.list(model$model) && !inherits(model$model, "vb_optim")) {
-      # Multiple models by sex
-      res_list <- list()
-      for (s in names(model$model)) {
-        res_list[[s]] <- make_row(model$model[[s]], sex = s)
-      }
-      result <- do.call(rbind, res_list)
-      # Ensure column order
-      result <- result[, c("Sex", "Parameter", "Estimate", "Lower", "Upper")]
-    } else {
-      # Single model
-      result <- make_row(model$model)
-    }
-
-    # Round only numeric columns
-    num_cols <- vapply(result, is.numeric, logical(1))
-    result[num_cols] <- lapply(result[num_cols], round, digits = digits)
-
-    return(result)
   } else if (inherits(model, "vb_brms")) {
     # Handle brms model summary
     if (is.list(model$models) && !inherits(model$models, "brmsfit")) {

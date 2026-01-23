@@ -367,7 +367,7 @@ plot_vb_bayes_diagnostics <- function(model,
           # Growth curve with prediction intervals
           age_seq <- seq(min(original_data$age), max(original_data$age), length.out = 50)
           new_data <- data.frame(age = age_seq)
-          predictions <- try(posterior_predict(brms_model, newdata = new_data, summary = TRUE), silent = TRUE)
+          predictions <- try(brms::posterior_predict(brms_model, newdata = new_data, summary = TRUE), silent = TRUE)
           if (inherits(predictions, "try-error")) {
             predictions <- fitted(brms_model, newdata = new_data, probs = c(0.025, 0.975))
           }

@@ -9,9 +9,9 @@
   parameters = NULL,
   include_curves = TRUE,
   ncol = 2,
-  alpha = 0.7,
+  alpha = 0.5,
   observed_colour = "red",
-  observed_size = 1.2,
+  observed_size = 1,
   title_size = 11,
   ...
 )
@@ -26,11 +26,11 @@ For sex models, use sex-specific names (e.g., "Linf_M", "Linf_F")}
 
 \item{ncol}{Number of columns for plot layout (default 2)}
 
-\item{alpha}{Transparency for density plots (default 0.7)}
+\item{alpha}{Transparency for density plots (default 0.5)}
 
 \item{observed_colour}{Colour for observed test statistic line (default "red")}
 
-\item{observed_size}{Line width for observed test statistic (default 1.2)}
+\item{observed_size}{Line width for observed test statistic (default 1)}
 
 \item{title_size}{Font size for plot titles (default 11)}
 
@@ -47,10 +47,10 @@ the significance of parameter differences and curve comparisons.
 \details{
 The function creates:
 \itemize{
-  \item Density plots of null distributions for each parameter
-  \item Vertical lines showing observed test statistics
-  \item P-values and significance indicators in plot titles
-  \item Optional curve comparison plot (if test_curves was TRUE)
+\item Density plots of null distributions for each parameter
+\item Vertical lines showing observed test statistics
+\item P-values and significance indicators in plot titles
+\item Optional curve comparison plot (if test_curves was TRUE)
 }
 
 For sex-specific models, separate plots are created for each sex's parameters.

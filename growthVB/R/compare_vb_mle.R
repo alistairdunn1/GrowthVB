@@ -325,8 +325,8 @@ compare_vb_mle <- function(age, length, group, sex = NULL, n_bootstrap = 1000,
     if (!is.null(sex_level)) {
       # Sex-specific parameters
       Linf <- params[[paste0("Linf_", sex_level)]]
-      k <- params[[paste0("K_", sex_level)]]
-      t0 <- params[[paste0("T0_", sex_level)]]
+      k <- params[[paste0("k_", sex_level)]]
+      t0 <- params[[paste0("t0_", sex_level)]]
     } else {
       # Single model parameters
       Linf <- params[["Linf"]]

@@ -172,11 +172,13 @@ predict_single_model <- function(model, newdata, interval, level) {
 
   # Calculate intervals if requested
   if (interval != "none") {
-    # Degrees of freedom for t-distribution
-    df <- nrow(model$data) - length(model$parameters)
-
-    # Critical value for the desired confidence level
-    t_value <- stats::qt(1 - (1 - level) / 2, df = df)
+    # Degrees of freedom for t-distribution; fall back to normal quantile if insufficient
+    df_raw <- nrow(model$data) - length(model$parameters)
+    if (is.null(df_raw) || is.na(df_raw) || df_raw <= 0) {
+      t_value <- stats::qnorm(1 - (1 - level) / 2)
+    } else {
+      t_value <- stats::qt(1 - (1 - level) / 2, df = df_raw)
+    }
 
     # Calculate confidence intervals using delta method
     se_pred <- rep(NA_real_, length(newdata$age))

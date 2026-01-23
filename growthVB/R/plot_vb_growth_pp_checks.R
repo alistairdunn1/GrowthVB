@@ -55,7 +55,7 @@ plot_vb_growth_pp_checks <- function(model,
     original_data <- brms_model$data
 
     # Generate posterior predictions
-    y_rep <- try(posterior_predict(brms_model, ndraws = ndraws), silent = TRUE)
+    y_rep <- try(brms::posterior_predict(brms_model, ndraws = ndraws), silent = TRUE)
     if (inherits(y_rep, "try-error")) {
       stop("Could not generate posterior predictions from model")
     }

@@ -49,11 +49,11 @@ summary.vb_mle <- function(object, ...) {
       # Collect diagnostics
       diag_row <- data.frame(
         Sex = s,
-        n_obs = object$model[[s]]$n_obs %||% NA,
-        logLik = object$model[[s]]$logLik %||% (-object$model[[s]]$value),
-        AIC = object$model[[s]]$AIC %||% NA,
-        BIC = object$model[[s]]$BIC %||% NA,
-        sigma = object$model[[s]]$sigma %||% NA,
+        n_obs = if (!is.null(object$model[[s]]$n_obs)) object$model[[s]]$n_obs else NA,
+        logLik = if (!is.null(object$model[[s]]$logLik)) object$model[[s]]$logLik else (-object$model[[s]]$value),
+        AIC = if (!is.null(object$model[[s]]$AIC)) object$model[[s]]$AIC else NA,
+        BIC = if (!is.null(object$model[[s]]$BIC)) object$model[[s]]$BIC else NA,
+        sigma = if (!is.null(object$model[[s]]$sigma)) object$model[[s]]$sigma else NA,
         row.names = NULL
       )
       

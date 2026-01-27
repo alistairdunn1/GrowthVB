@@ -69,7 +69,7 @@ plot_vb_posteriors <- function(model, ndraws = 50) {
 
     # Create parameter density plots
     param_plot <- ggplot2::ggplot(post_df, ggplot2::aes(x = value)) +
-      ggplot2::geom_density(fill = "blue", alpha = 0.5) +
+      ggplot2::geom_density(fill = "royalblue", alpha = 0.5) +
       ggplot2::facet_wrap(~parameter, scales = "free") +
       ggplot2::labs(
         title = paste("Parameter Posterior Distributions", title_suffix),

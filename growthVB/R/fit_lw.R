@@ -367,7 +367,7 @@ plot.lw_fit <- function(x, log_scale = FALSE, ...) {
         ggplot2::geom_line(
           data = pred_data,
           ggplot2::aes(x = log(length), y = log(weight)),
-          colour = "blue", linewidth = 1
+          colour = "royalblue", linewidth = 1
         ) +
         ggplot2::labs(
           x = "log(Length)", y = "log(Weight)",
@@ -384,7 +384,7 @@ plot.lw_fit <- function(x, log_scale = FALSE, ...) {
         ggplot2::geom_line(
           data = pred_data,
           ggplot2::aes(x = length, y = weight),
-          colour = "blue", linewidth = 1
+          colour = "royalblue", linewidth = 1
         ) +
         ggplot2::labs(
           x = "Length", y = "Weight",
@@ -404,13 +404,13 @@ plot.lw_fit <- function(x, log_scale = FALSE, ...) {
         xlab = "log(Length)", ylab = "log(Weight)",
         main = "Length-Weight Relationship (log scale)", ...
       )
-      lines(log(pred_data$length), log(pred_data$weight), col = "blue", lwd = 2)
+      lines(log(pred_data$length), log(pred_data$weight), col = "royalblue", lwd = 2)
     } else {
       plot(data$length, data$weight,
         xlab = "Length", ylab = "Weight",
         main = "Length-Weight Relationship", ...
       )
-      lines(pred_data$length, pred_data$weight, col = "blue", lwd = 2)
+      lines(pred_data$length, pred_data$weight, col = "royalblue", lwd = 2)
     }
   }
 }

@@ -22,6 +22,7 @@ Rscript build_package.R
 - **Standard von Bertalanffy models**: Fit growth curves using MLE or Bayesian methods (brms)
 - **Heteroscedasticity modelling**: Model CV as a function of predicted length
 - **Sex-specific growth modelling**: Separate parameters by sex
+- **Length-weight relationships**: Fit allometric length-weight models (W = aL^b)
 - **Length bin sampling corrections**: Account for stratified sampling designs
 - **Parameter estimation**: 95% confidence/credible intervals
 - **Diagnostics**: Residual analysis, posterior predictive checks, empirical CV analysis
@@ -29,6 +30,7 @@ Rscript build_package.R
 - **Visualisation**: Density plots showing bootstrap permutation distributions
 - **Summary and print methods**: Formatted output for results
 - **Documentation**: Help with examples for all functionality
+- **Mathematical methods and report templates**: Comprehensive documentation with ready-to-use methods descriptions (see [Methods.md](Methods.md))
 
 ## Core Functions
 
@@ -87,9 +89,48 @@ fit_vb_brms(
 - **Prior specification**: Prior definition for all parameters
 - **MCMC control**: Control of sampling behaviour
 
+#### `fit_lw()`: Length-Weight Relationship Fitting
+
+```r
+fit_lw(
+  length,               # Numeric vector of lengths
+  weight,               # Numeric vector of weights
+  bias_adjustment = TRUE # Apply bias correction for back-transformation (default TRUE)
+)
+```
+
+**Features:**
+
+- **Allometric modelling**: Fits the standard W = aL^b relationship
+- **Log-linear regression**: Model fitted as log(W) = log(a) + b*log(L)
+- **Bias adjustment**: Optional correction for back-transformation bias
+- **Isometry testing**: Tests whether b = 3 (isometric growth)
+- **Prediction**: Generate weight predictions for new lengths
+- **Visualisation**: Plot fitted relationship with observed data
+
+**Related functions:**
+
+- `get_lw_params()`: Extract a and b parameters from fitted model
+- `predict_lw()`: Predict weights for new lengths
+- `print.lw_fit()`: Print method for length-weight fit results
+- `summary.lw_fit()`: Detailed summary including isometry test
+- `plot.lw_fit()`: Visualise fitted relationship
+
 #### Analysis
 
 - `summarise_vb()`: Summarise parameter estimates with confidence/credible intervals
+
+#### S3 Methods for vb_mle Objects
+
+- `print.vb_mle()`: Print method for MLE model results
+- `summary.vb_mle()`: Summary method with parameter estimates and model fit statistics
+- `predict.vb_mle()`: Predict lengths for new ages with confidence/prediction intervals
+
+#### S3 Methods for vb_comparison Objects
+
+- `print.vb_comparison()`: Print method for comparison results
+- `summary.vb_comparison()`: Detailed summary of bootstrap permutation test results
+- `plot.vb_comparison()`: Density plots of bootstrap null distributions
 
 ### Model Output Structure
 
@@ -565,6 +606,100 @@ if (requireNamespace("brms", quietly = TRUE)) {
 }
 ```
 
+### Length-Weight Relationships
+
+```r
+library(growthVB)
+
+# Simulate length-weight data with allometric relationship
+set.seed(789)
+n <- 150
+length <- runif(n, 15, 80)  # Lengths from 15 to 80 cm
+true_a <- 0.0085
+true_b <- 3.05  # Slight positive allometry
+
+# Generate weights with log-normal error
+weight <- true_a * length^true_b * exp(rnorm(n, 0, 0.08))
+
+# Fit the length-weight relationship
+fit_lw_model <- fit_lw(length = length, weight = weight, bias_adjustment = TRUE)
+
+# Print basic results
+print(fit_lw_model)
+
+# Detailed summary with isometry test
+summary(fit_lw_model)
+
+# Extract parameters
+params <- get_lw_params(fit_lw_model)
+cat(sprintf("W = %.6f * L^%.4f\n", params["a"], params["b"]))
+
+# Predict weights for specific lengths
+new_lengths <- c(20, 30, 40, 50, 60)
+predictions <- predict_lw(fit_lw_model, new_length = new_lengths)
+print(predictions)
+
+# Or predict using parameters directly
+predict_lw(new_length = new_lengths, a = 0.01, b = 3.0)
+
+# Plot the fitted relationship
+plot(fit_lw_model)
+
+# Plot on log-log scale
+plot(fit_lw_model, log_scale = TRUE)
+```
+
+**Length-Weight Model Output:**
+
+The `fit_lw()` function returns an object containing:
+
+- **`lw_params`**: Named vector with 'a' and 'b' parameters on original scale
+- **`bias_adjustment`**: Logical indicating if bias correction was applied
+- **`original_data`**: Data frame with input length and weight values
+- **`coefficients`**: Model coefficients on log scale
+
+**Bias Adjustment (Sprugel/Miller correction):**
+
+When fitting $\log(W) = \alpha + b \cdot \log(L) + \varepsilon$ where $\varepsilon \sim N(0, \sigma^2)$, the naive back-transformation $a = \exp(\hat{\alpha})$ systematically underestimates the true value. This occurs because the expected value of the exponentiated error term is:
+
+$$E[\exp(\varepsilon)] = \exp(\sigma^2/2) > 1$$
+
+The bias-corrected estimate is:
+
+$$a = \exp\left(\hat{\alpha} + \frac{\sigma^2}{2}\right)$$
+
+where $\hat{\alpha}$ is the estimated log-scale intercept and $\sigma^2$ is the residual variance (mean squared error) from the regression. This is the standard correction described by Sprugel (1983) and Miller (1984).
+
+**Isometry Testing:**
+
+The `summary()` method includes a t-test for isometric growth (H0: b = 3):
+
+- **b < 3**: Negative allometry (weight increases slower than length cubed)
+- **b = 3**: Isometric growth
+- **b > 3**: Positive allometry (weight increases faster than length cubed)
+
+## Mathematical Methods and Report Templates
+
+The [Methods.md](Methods.md) file provides comprehensive documentation in two parts:
+
+**Part A: Mathematical Framework**
+- Detailed mathematical derivations for length-weight and von Bertalanffy models
+- Likelihood functions and optimisation methods
+- Heteroscedastic error structure
+- Bayesian model specification with priors
+- Bootstrap permutation testing theory
+- Model comparison and diagnostics
+
+**Part B: Report Templates**
+- Brief and detailed methods descriptions ready for scientific reports
+- Length-weight relationship text (including bias correction)
+- Von Bertalanffy growth curve text (MLE and Bayesian versions)
+- Group comparison methodology
+- Results table templates
+- Complete reference list
+
+Copy and adapt the relevant sections for your reports, replacing placeholder values with your actual results.
+
 ## Changelog
 
 ### Version 0.2.0 (November 2025)
@@ -577,6 +712,7 @@ if (requireNamespace("brms", quietly = TRUE)) {
 - **Sex-Specific Model Support**: Support for comparing sex-specific growth parameters
 - **Output Methods**: Added `summary()` and `print()` methods for formatted results
 - **Visualisation Framework**: Added `plot()` method for bootstrap permutation test results
+- **Length-Weight Relationships**: Added `fit_lw()`, `get_lw_params()`, `predict_lw()` for allometric length-weight modelling
 - **Documentation**: Help files and mathematical methodology documentation
 
 **Technical Improvements:**
@@ -593,6 +729,9 @@ if (requireNamespace("brms", quietly = TRUE)) {
 - `summary.vb_comparison()`: Formatted output
 - `print.vb_comparison()`: Simplified output method
 - `plot.vb_comparison()`: Density plot visualisation of test results
+- `fit_lw()`: Fit length-weight relationships using log-linear regression
+- `get_lw_params()`: Extract length-weight parameters from fitted models
+- `predict_lw()`: Predict weights from lengths using fitted models
 
 ### Citation
 
@@ -611,6 +750,8 @@ When using specific functionality, please also cite:
 - **Bayesian models**: Bürkner (2017) for brms, Carpenter et al. (2017) for Stan
 - **von Bertalanffy equation**: von Bertalanffy (1957)
 - **Heteroscedastic growth models**: Kimura (2008)
+- **Length-weight relationships**: Froese (2006)
+- **Log-transformation bias correction**: Sprugel (1983), Miller (1984)
 
 ## References
 
@@ -618,9 +759,15 @@ Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using 
 
 Carpenter, B., Gelman, A., Hoffman, M. D., Lee, D., Goodrich, B., Betancourt, M., ... & Riddell, A. (2017). Stan: A probabilistic programming language. *Journal of Statistical Software*, 76(1).
 
+Froese, R. (2006). Cube law, condition factor and weight-length relationships: history, meta-analysis and recommendations. *Journal of Applied Ichthyology*, 22(4), 241-253.
+
 Kimura, D. K. (2008). Extending the von Bertalanffy growth model using explanatory variables. *Canadian Journal of Fisheries and Aquatic Sciences*, 65(9), 1879-1891.
 
+Miller, D. M. (1984). Reducing transformation bias in curve fitting. *The American Statistician*, 38(2), 124-126.
+
 Okuda, T., Somhlaba, S., Sarralde, R., Mori, M., Rojo, V., & Dunn, A. (2025). Characterisation of the toothfish fishery in Subarea 48.6 through the 2024/25 season. CCAMLR Working Group Paper, WG-FSA-2025/34, Hobart.
+
+Sprugel, D. G. (1983). Correcting for bias in log-transformed allometric equations. *Ecology*, 64(1), 209-210.
 
 Von Bertalanffy, L. (1957). Quantitative laws in metabolism and growth. *The Quarterly Review of Biology*, 32(3), 217-231.
 

@@ -97,8 +97,7 @@ plot_lw_diagnostics <- function(model) {
       x = "Fitted values (log scale)",
       y = "Residuals",
       title = "Residuals vs Fitted"
-    ) +
-    ggplot2::theme_minimal()
+    )
 
   # 2. Q-Q plot of residuals
   plots$qq_plot <- ggplot2::ggplot(
@@ -111,8 +110,7 @@ plot_lw_diagnostics <- function(model) {
       x = "Theoretical Quantiles",
       y = "Sample Quantiles",
       title = "Normal Q-Q Plot"
-    ) +
-    ggplot2::theme_minimal()
+    )
 
   # 3. Scale-Location Plot (sqrt of abs standardized residuals vs. fitted)
   plots$scale_location <- ggplot2::ggplot(
@@ -125,8 +123,7 @@ plot_lw_diagnostics <- function(model) {
       x = "Fitted values (log scale)",
       y = "sqrt(|Standardized residuals|)",
       title = "Scale-Location Plot"
-    ) +
-    ggplot2::theme_minimal()
+    )
 
   # 4. Residuals vs Length (to check for length-dependent patterns)
   plots$residuals_vs_length <- ggplot2::ggplot(
@@ -140,8 +137,7 @@ plot_lw_diagnostics <- function(model) {
       x = "Length",
       y = "Residuals",
       title = "Residuals vs Length"
-    ) +
-    ggplot2::theme_minimal()
+    )
 
   message("Available diagnostic plots: residuals_vs_fitted, qq_plot, scale_location, residuals_vs_length")
 

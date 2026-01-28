@@ -356,8 +356,9 @@ plot.lw_fit <- function(x, log_scale = FALSE, ...) {
   data <- x$original_data
   params <- x$lw_params
 
-  # Generate prediction line
-  length_seq <- seq(min(data$length), max(data$length), length.out = 100)
+  # Generate prediction line (ensure positive lengths for log transform)
+  min_length <- max(min(data$length), 0.001)
+  length_seq <- seq(min_length, max(data$length), length.out = 100)
   pred_data <- predict_lw(x, new_length = length_seq)
 
   if (requireNamespace("ggplot2", quietly = TRUE)) {
@@ -376,8 +377,7 @@ plot.lw_fit <- function(x, log_scale = FALSE, ...) {
             "log(W) = %.4f + %.4f * log(L)",
             log(params["a"]), params["b"]
           )
-        ) +
-        ggplot2::theme_minimal()
+        )
     } else {
       p <- ggplot2::ggplot(data, ggplot2::aes(x = length, y = weight)) +
         ggplot2::geom_point(alpha = 0.6) +
@@ -393,8 +393,7 @@ plot.lw_fit <- function(x, log_scale = FALSE, ...) {
             "W = %.2e * L^%.3f",
             params["a"], params["b"]
           )
-        ) +
-        ggplot2::theme_minimal()
+        )
     }
     return(p)
   } else {

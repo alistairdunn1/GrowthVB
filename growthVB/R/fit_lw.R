@@ -235,11 +235,11 @@ predict_lw <- function(model = NULL, new_length, a = NULL, b = NULL) {
   if (!is.numeric(new_length)) {
     stop("'new_length' must be a numeric vector")
   }
-  if (any(new_length <= 0, na.rm = TRUE)) {
-    warning("Negative or zero lengths will produce invalid predictions")
+  if (any(new_length < 0, na.rm = TRUE)) {
+    warning("Negative lengths will produce invalid predictions")
   }
 
-  # Calculate predicted weights
+  # Calculate predicted weights (zero length gives zero weight)
   weight <- a * new_length^b
 
   return(data.frame(length = new_length, weight = weight))

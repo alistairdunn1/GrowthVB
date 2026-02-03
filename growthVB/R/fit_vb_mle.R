@@ -14,6 +14,9 @@
 #' @param maxit Maximum number of iterations for optimisation (default 1000)
 #' @param start_values Optional named vector of starting values for parameters.
 #'   Should include Linf, k, t0, and cv. If NULL, starting values are estimated from data.
+#' @param fixed_params Optional named vector specifying parameters to fix at given values.
+#'   Names should be from c("Linf", "k", "t0", "cv"). Fixed parameters will not be estimated.
+#'   Example: c(Linf = 100) to fix Linf at 100 while estimating k, t0, and cv.
 #'
 #' @return A list containing:
 #'   \item{parameters}{Estimated parameters with confidence intervals}
@@ -43,7 +46,8 @@
 #' @export
 fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
                        sampling_prob = 1, ci_level = 0.95,
-                       optim_method = "L-BFGS-B", maxit = 1000, start_values = NULL) {
+                       optim_method = "L-BFGS-B", maxit = 1000, start_values = NULL,
+                       fixed_params = NULL) {
   # Create data frame for analysis with original order index
   data <- data.frame(
     ID = seq_along(age),  # Add unique identifier preserving original order
@@ -97,11 +101,15 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
 
     # Negative log-likelihood function with CV as a function of predicted length
     neg_log_likelihood <- function(params) {
+      # Merge optimized parameters with fixed parameters
+      all_params <- params_template
+      all_params[free_param_names] <- params
+      
       # Extract parameters
-      Linf <- params[1]
-      k <- params[2]
-      t0 <- params[3]
-      cv <- params[4]
+      Linf <- all_params["Linf"]
+      k <- all_params["k"]
+      t0 <- all_params["t0"]
+      cv <- all_params["cv"]
 
       # Check for invalid parameter values
       if (Linf <= 0 || k <= 0 || cv <= 0) {
@@ -149,13 +157,54 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
 
     # Initial parameter vector
     init_params <- c(Linf = Linf_init, k = k_init, t0 = t0_init, cv = cv_init)
+    
+    # Handle fixed parameters
+    all_param_names <- c("Linf", "k", "t0", "cv")
+    
+    if (!is.null(fixed_params)) {
+      # Validate fixed parameter names
+      if (!all(names(fixed_params) %in% all_param_names)) {
+        invalid_names <- setdiff(names(fixed_params), all_param_names)
+        stop("Invalid parameter names in fixed_params: ", paste(invalid_names, collapse = ", "),
+             ". Must be from: Linf, k, t0, cv")
+      }
+      
+      # Identify free (non-fixed) parameters
+      free_param_names <- setdiff(all_param_names, names(fixed_params))
+      
+      # Check that at least one parameter is free
+      if (length(free_param_names) == 0) {
+        stop("All parameters are fixed. At least one parameter must be free to estimate.")
+      }
+      
+      # Create template with all parameters (fixed + initial values for free)
+      params_template <- init_params
+      params_template[names(fixed_params)] <- fixed_params
+      
+      # Update init_params to only include free parameters
+      init_params <- init_params[free_param_names]
+      
+      # Adjust bounds to only include free parameters
+      lower_bounds_full <- c(Linf = max(subset_data$length) * 0.5, k = 0.001, 
+                            t0 = min(subset_data$age) - 5, cv = 0.01)
+      upper_bounds_full <- c(Linf = max(subset_data$length) * 3, k = 3.0, 
+                            t0 = max(subset_data$age) + 2, cv = 1.0)
+      
+      lower_bounds <- lower_bounds_full[free_param_names]
+      upper_bounds <- upper_bounds_full[free_param_names]
+    } else {
+      # No fixed parameters, all parameters are free
+      free_param_names <- all_param_names
+      params_template <- init_params
+      lower_bounds <- c(Linf = max(subset_data$length) * 0.5, k = 0.001, 
+                       t0 = min(subset_data$age) - 5, cv = 0.01)
+      upper_bounds <- c(Linf = max(subset_data$length) * 3, k = 3.0, 
+                       t0 = max(subset_data$age) + 2, cv = 1.0)
+    }
 
     # Try optimisation with bounds to ensure reasonable parameter values
     if (optim_method %in% c("L-BFGS-B")) {
-      # Use bounded optimisation
-      lower_bounds <- c(Linf = max(subset_data$length) * 0.5, k = 0.001, t0 = min(subset_data$age) - 5, cv = 0.01)
-      upper_bounds <- c(Linf = max(subset_data$length) * 3, k = 3.0, t0 = max(subset_data$age) + 2, cv = 1.0)
-
+      # Use bounded optimisation (bounds already set above based on free parameters)
       optim_result <- try(
         stats::optim(
           par = init_params,
@@ -223,9 +272,19 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
       }
     }
 
+    # Reconstruct full parameter vector (including fixed parameters)
+    if (!is.null(fixed_params)) {
+      full_params <- params_template
+      full_params[free_param_names] <- optim_result$par
+    } else {
+      full_params <- optim_result$par
+    }
+    
     # Create a model object with the optimisation results and other useful information
     model <- list(
-      parameters = optim_result$par,
+      parameters = full_params,
+      estimated_parameters = optim_result$par,  # Only the estimated (free) parameters
+      fixed_parameters = fixed_params,  # The fixed parameters
       convergence = optim_result$convergence,
       value = optim_result$value,
       counts = optim_result$counts,
@@ -267,6 +326,7 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
     model$residuals <- residuals
 
     # Calculate parameter standard errors if hessian is available
+    # Note: Standard errors only apply to estimated (free) parameters
     if (!is.null(model$hessian)) {
       tryCatch(
         {
@@ -277,20 +337,32 @@ fit_vb_mle <- function(age, length, sex = NULL, length_bins = NULL,
           }
 
           vcov_matrix <- solve(model$hessian)
-          model$se <- sqrt(diag(vcov_matrix))
+          # Standard errors for estimated parameters
+          se_estimated <- sqrt(diag(vcov_matrix))
+          
+          # Create full SE vector (NA for fixed parameters)
+          se_full <- rep(NA, length(model$parameters))
+          names(se_full) <- names(model$parameters)
+          if (!is.null(fixed_params)) {
+            se_full[free_param_names] <- se_estimated
+          } else {
+            se_full <- se_estimated
+          }
+          
+          model$se <- se_full
           model$vcov <- vcov_matrix
         },
         error = function(e) {
           warning("Could not compute standard errors from Hessian matrix: ", e$message)
           warning("This often indicates convergence issues or poorly conditioned optimisation.")
           model$se <- rep(NA, length(model$parameters))
-          model$vcov <- matrix(NA, nrow = length(model$parameters), ncol = length(model$parameters))
+          model$vcov <- matrix(NA, nrow = length(model$estimated_parameters), ncol = length(model$estimated_parameters))
         }
       )
     } else {
       warning("Hessian matrix not available. Cannot compute confidence intervals.")
       model$se <- rep(NA, length(model$parameters))
-      model$vcov <- matrix(NA, nrow = length(model$parameters), ncol = length(model$parameters))
+      model$vcov <- matrix(NA, nrow = length(model$estimated_parameters), ncol = length(model$estimated_parameters))
     }
 
     class(model) <- c("vb_optim", "list")

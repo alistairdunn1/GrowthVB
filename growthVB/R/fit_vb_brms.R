@@ -11,6 +11,9 @@
 #' @param prior_overrides Optional named character vector or list to selectively override default priors
 #'   for specific non-linear parameters. Names must be in c("Linf","k","t0","CV"). Values are prior
 #'   specification strings accepted by brms (e.g. "normal(120, 30)"). Ignored if `priors` is supplied.
+#' @param fixed_params Optional named vector specifying parameters to fix at given values.
+#'   Names should be from c("Linf", "k", "t0", "CV"). This sets a very tight prior (effectively fixing the parameter).
+#'   Example: c(Linf = 100) to fix Linf at 100 while estimating k, t0, and CV.
 #' @param chains Number of MCMC chains (default 4)
 #' @param iter Number of iterations for each chain (default 4000)
 #' @param cores Number of CPU cores to use for parallel processing (default: number of chains)
@@ -73,6 +76,7 @@
 #' @export
 fit_vb_brms <- function(age, length, sex = NULL,
                         priors = NULL, prior_overrides = NULL,
+                        fixed_params = NULL,
                         chains = 4, iter = 4000, cores = chains,
                         parallel_sex = TRUE, ...) {
   # Check if brms is installed
@@ -113,8 +117,27 @@ fit_vb_brms <- function(age, length, sex = NULL,
     # Start from defaults
     prior_list <- make_default_priors()
 
+    # Handle fixed parameters by setting very tight priors
+    if (!is.null(fixed_params)) {
+      # Validate fixed parameter names
+      allowed_names <- c("Linf", "k", "t0", "CV")
+      if (!all(names(fixed_params) %in% allowed_names)) {
+        invalid_names <- setdiff(names(fixed_params), allowed_names)
+        stop("Invalid parameter names in fixed_params: ", paste(invalid_names, collapse = ", "),
+             ". Must be from: Linf, k, t0, CV")
+      }
+      
+      # Set very tight priors (sd = 0.001) for fixed parameters
+      for (param_name in names(fixed_params)) {
+        param_value <- fixed_params[[param_name]]
+        # Create a very tight normal prior centered at the fixed value
+        lb <- if (param_name %in% c("Linf", "k", "CV")) 0 else NULL
+        prior_string <- sprintf("normal(%s, 0.001)", param_value)
+        prior_list[[param_name]] <- brms::prior_string(prior_string, nlpar = param_name, lb = lb)
+      }
+    }
 
-    # Apply selective overrides if provided
+    # Apply selective overrides if provided (these override defaults but not fixed_params)
     if (!is.null(prior_overrides)) {
       if (is.list(prior_overrides)) {
         # convert to character vector preserving names
@@ -122,8 +145,11 @@ fit_vb_brms <- function(age, length, sex = NULL,
       }
       if (!is.null(names(prior_overrides))) {
         allowed <- intersect(names(prior_overrides), c("Linf", "k", "t0", "CV"))
-        for (nm in allowed) {
-          # lower bounds for parameters that must be >= 0
+        for (nm in allowed) {          # Skip if this parameter is fixed (fixed_params take precedence)
+          if (!is.null(fixed_params) && nm %in% names(fixed_params)) {
+            warning(sprintf("Parameter %s is fixed. Ignoring prior_override for this parameter.", nm))
+            next
+          }          # lower bounds for parameters that must be >= 0
           lb <- if (nm %in% c("Linf", "k", "CV")) 0 else NULL
           # Construct a prior for this parameter from the string
           prior_list[[nm]] <- brms::prior_string(as.character(prior_overrides[[nm]]), nlpar = nm, lb = lb)

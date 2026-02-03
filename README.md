@@ -22,6 +22,7 @@ Rscript build_package.R
 - **Standard von Bertalanffy models**: Fit growth curves using MLE or Bayesian methods (brms)
 - **Heteroscedasticity modelling**: Model CV as a function of predicted length
 - **Sex-specific growth modelling**: Separate parameters by sex
+- **Fixed parameters**: Ability to fix any growth parameter (Linf, k, t0, cv) at a specific value while estimating others
 - **Length-weight relationships**: Fit allometric length-weight models (W = aL^b)
 - **Length bin sampling corrections**: Account for stratified sampling designs
 - **Parameter estimation**: 95% confidence/credible intervals
@@ -47,7 +48,9 @@ fit_vb_mle(
   sampling_prob = 1,   # Optional vector of sampling probabilities (defaults to 1)
   ci_level = 0.95,     # Confidence interval level (default 0.95)
   optim_method = "L-BFGS-B", # Optimisation method for stats::optim (default "L-BFGS-B")
-  maxit = 1000         # Maximum number of iterations for optimisation
+  maxit = 1000,        # Maximum number of iterations for optimisation
+  start_values = NULL, # Optional named vector of starting values
+  fixed_params = NULL  # Optional named vector to fix parameters at specific values
 )
 ```
 
@@ -59,6 +62,7 @@ fit_vb_mle(
 - **Heteroscedastic variance**: Accounts for increasing variance with fish length
 - **Parameter uncertainty**: Provides standard errors and confidence intervals
 - **Fitting**: Uses bounded optimisation (L-BFGS-B) with starting values
+- **Fixed parameters**: Ability to fix any parameter (Linf, k, t0, cv) at a specific value while estimating others
 
 #### `fit_vb_brms()`: Bayesian Von Bertalanffy Model Fitting
 
@@ -70,6 +74,8 @@ fit_vb_brms(
   length_bins = NULL,   # Optional numeric vector of length bin midpoints
   bin_counts = NULL,    # Optional count of samples in each length bin
   priors = NULL,        # Optional list of prior specifications
+  prior_overrides = NULL, # Optional named list to selectively override default priors
+  fixed_params = NULL,  # Optional named vector to fix parameters at specific values
   iter = 2000,          # MCMC iterations
   warmup = 1000,        # Warmup iterations
   chains = 4,           # Number of MCMC chains
@@ -88,6 +94,7 @@ fit_vb_brms(
 - **CV modelling**: Models heteroscedasticity where variance increases with fish size
 - **Prior specification**: Prior definition for all parameters
 - **MCMC control**: Control of sampling behaviour
+- **Fixed parameters**: Ability to fix any parameter (Linf, k, t0, CV) at a specific value using very tight priors
 
 #### `fit_lw()`: Length-Weight Relationship Fitting
 
@@ -357,6 +364,105 @@ predictions_detailed <- predict(fit_sex, newdata = new_ages, interval = "predict
 # Plot growth curves with prediction intervals and original data
 plot_vb_predictions(predictions_detailed, original_data = fit_sex$data)
 ```
+
+### Fixing Parameters
+
+Both `fit_vb_mle()` and `fit_vb_brms()` support fixing one or more von Bertalanffy parameters at specific values while estimating the remaining parameters. This is useful when you have prior knowledge about certain parameters or want to compare models with constrained parameter spaces.
+
+#### Fixing Parameters with MLE
+
+In the MLE approach, fixed parameters are literally excluded from the optimization:
+
+```r
+# Example data
+set.seed(123)
+age <- rep(1:10, each = 5)
+length <- 100 * (1 - exp(-0.3 * (age - (-0.5)))) + rnorm(length(age), 0, 5)
+
+# Fix Linf at 100, estimate k, t0, and cv
+fit_fixed_Linf <- fit_vb_mle(
+  age = age, 
+  length = length, 
+  fixed_params = c(Linf = 100)
+)
+
+# Fix both Linf and k, estimate only t0 and cv
+fit_fixed_multiple <- fit_vb_mle(
+  age = age, 
+  length = length, 
+  fixed_params = c(Linf = 100, k = 0.3)
+)
+
+# Fix t0 at theoretical value, estimate others
+fit_fixed_t0 <- fit_vb_mle(
+  age = age, 
+  length = length, 
+  fixed_params = c(t0 = -0.5)
+)
+
+# View results - fixed parameters will have exact specified values
+print(fit_fixed_Linf$parameters)
+```
+
+**Note**: For MLE models, fixed parameters will not have standard errors (shown as `NA`), since they are not estimated.
+
+#### Fixing Parameters with Bayesian Methods
+
+In the Bayesian approach, fixed parameters are implemented using very tight priors (sd = 0.001):
+
+```r
+# Fix Linf at 100 using a very tight prior
+fit_brms_fixed <- fit_vb_brms(
+  age = age, 
+  length = length, 
+  fixed_params = c(Linf = 100),
+  chains = 2,
+  iter = 1000
+)
+
+# Combine fixed parameters with custom priors
+# Fix Linf, but set a custom (non-fixed) prior for k
+fit_brms_combined <- fit_vb_brms(
+  age = age, 
+  length = length, 
+  fixed_params = c(Linf = 100),
+  prior_overrides = list(k = "gamma(2, 10)"),
+  chains = 2,
+  iter = 1000
+)
+
+# View results - fixed parameters will be very close to specified values
+print(fit_brms_fixed$parameters)
+```
+
+**Note**: For Bayesian models, fixed parameters will have minimal posterior uncertainty (effectively fixed), which is more appropriate for MCMC inference.
+
+#### Fixed Parameters with Sex-Specific Models
+
+You can also fix parameters when fitting sex-specific models:
+
+```r
+# Create sex-specific data
+sex <- rep(c("M", "F"), length.out = length(age))
+
+# Fix t0 for both sexes while estimating sex-specific Linf, k, and cv
+fit_sex_fixed <- fit_vb_mle(
+  age = age, 
+  length = length, 
+  sex = sex,
+  fixed_params = c(t0 = -0.5)
+)
+
+# Each sex gets separate estimates for Linf, k, and cv
+# but t0 is fixed at -0.5 for both
+```
+
+**Important Notes**:
+
+- At least one parameter must be free to estimate (you cannot fix all parameters)
+- Parameter names must match exactly: `"Linf"`, `"k"`, `"t0"`, `"cv"` (MLE) or `"CV"` (brms)
+- For brms, `fixed_params` takes precedence over `prior_overrides`
+- See [fixed_params_examples.R](fixed_params_examples.R) for comprehensive examples
 
 ### Prediction Plotting
 
